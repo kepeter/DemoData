@@ -13,7 +13,7 @@ namespace DemoData
 	public class CustomFunction
 	{
 		public string Name;
-		public string[ ] Func;
+		public string Func;
 	}
 
 	public class CustomClass
@@ -29,7 +29,7 @@ namespace DemoData
 			StringBuilder oCode = new StringBuilder( );
 			TextInfo oTextInfo = new CultureInfo( "en", false ).TextInfo;
 			string szFile = string.Format( @"{0}\Culture\{1}\func.json", Path.GetDirectoryName( System.Reflection.Assembly.GetEntryAssembly( ).Location ), Culture );
-			string szJson = File.ReadAllText( szFile ).ToLower();
+			string szJson = File.ReadAllText( szFile ).ToLower( );
 			CustomClass oCustomClass = JsonConvert.DeserializeObject<CustomClass>( szJson );
 
 			oCode.AppendLine( "namespace DemoData {" );
@@ -37,26 +37,27 @@ namespace DemoData
 
 			foreach ( CustomFunction oCustomFunction in oCustomClass.Local )
 			{
+				// \[.*?\]
 				string szFormat = string.Empty;
 				string szMethod = string.Empty;
 				int nIndex = 0;
 
-				foreach ( string szPart in oCustomFunction.Func )
-				{
-					if ( !string.IsNullOrEmpty( szPart ) )
-					{
-						if ( szPart.StartsWith( "{" ) && szPart.EndsWith( "}" ) )
-						{
-							szFormat += string.Format( "{{{0}}}", nIndex++ );
+				//foreach ( string szPart in oCustomFunction.Func )
+				//{
+				//if ( !string.IsNullOrEmpty( szPart ) )
+				//{
+				//if ( szPart.StartsWith( "{" ) && szPart.EndsWith( "}" ) )
+				//{
+				//szFormat += string.Format( "{{{0}}}", nIndex++ );
 
-							szMethod += Regex.Match( szPart, "[^{}]+" ) + ", ";
-						}
-						else
-						{
-							szFormat += szPart;
-						}
-					}
-				}
+				//szMethod += Regex.Match( szPart, "[^{}]+" ) + ", ";
+				//}
+				//else
+				//{
+				//szFormat += szPart;
+				//}
+				//}
+				//}
 
 				if ( !string.IsNullOrEmpty( szMethod ) )
 				{

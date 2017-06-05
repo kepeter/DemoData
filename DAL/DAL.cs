@@ -10,7 +10,7 @@ namespace DemoData
 	public class DAL
     {
 		private static Random _Random = new Random( );
-		private static CultureInfo _CultureInfo = CultureInfo.GetCultureInfo( "en" );
+		private static CultureInfo _CultureInfo;
 		private static int _SID = 0;
 		private static string _BaseName = string.Format( @"{0}\Culture\{{0}}\{{1}}.json", Path.GetDirectoryName( System.Reflection.Assembly.GetEntryAssembly( ).Location ) );
 		private static string _MissingResource = "###There is no resource '{0}' in culture '{1}'!";

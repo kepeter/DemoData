@@ -2,20 +2,20 @@
 	"local": [
 		{
 			"name": "phone",
-			"func": [ "{number(3)}-{number(4)}" ]
+			"func": "{number(3)}-{number(4)}"
 		},
 		{
 			"name": "firsname",
-			"func": [ "[first]" ]
+			"func": "[first]"
 		},
 		{
 			"name": "mail",
-			"func": [ "[first]@dummy.com" ],
+			"func": "[first]@dummy.com",
 			"case": "lower"
 		},
 		{
 			"name": "money",
-			"func": [ "{number(2,5)}.{number(2)}" ]
+			"func": "{number(2,5)}.{number(2)}"
 		}
 	]
 }
