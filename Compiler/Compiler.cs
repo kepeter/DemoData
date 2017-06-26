@@ -29,7 +29,7 @@ namespace DemoData
 		static int _Index = 0;
 		static TextInfo _TextInfo = new CultureInfo( "en", false ).TextInfo;
 
-		public static void Compile ( string Culture )
+		public static bool Compile ( string Culture )
 		{
 			StringBuilder oCode = new StringBuilder( );
 			string szFile = string.Format( @"{0}\Culture\{1}\func.json", Path.GetDirectoryName( System.Reflection.Assembly.GetEntryAssembly( ).Location ), Culture );
@@ -82,10 +82,19 @@ namespace DemoData
 
 			if ( results.Errors.HasErrors )
 			{
+				Console.WriteLine( "...there were some errors:" );
 				foreach ( CompilerError error in results.Errors )
 				{
-					Console.WriteLine( String.Format( "Error ({0}): {1}", error.ErrorNumber, error.ErrorText ) );
+					Console.WriteLine( String.Format( "\t({0}): {1}", error.ErrorNumber, error.ErrorText ) );
 				}
+
+				return ( false );
+			}
+			else
+			{
+				Console.WriteLine( "...done." );
+
+				return ( true );
 			}
 		}
 
