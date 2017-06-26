@@ -2,7 +2,7 @@
 	"local": [
 		{
 			"name": "phone",
-			"func": "{number(3)}-{number(4)}"
+			"func": "<number(3)>-<number(7)>"
 		},
 		{
 			"name": "firsname",
@@ -15,7 +15,7 @@
 		},
 		{
 			"name": "money",
-			"func": "{number(2,5)}.{number(2)}"
+			"func": "<number(2,5)>.<number(2)>"
 		}
 	]
 }
