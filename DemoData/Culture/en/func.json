@@ -1,4 +1,5 @@
 ﻿{
+	"inherit": "",
 	"local": [
 		{
 			"name": "phone",

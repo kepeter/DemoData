@@ -33,6 +33,14 @@ namespace DemoData
 		{
 			StringBuilder oCode = new StringBuilder( );
 			string szFile = string.Format( @"{0}\Culture\{1}\func.json", Path.GetDirectoryName( System.Reflection.Assembly.GetEntryAssembly( ).Location ), Culture );
+
+			if ( !File.Exists( szFile ) )
+			{
+				Console.WriteLine( "...ERROR: Can not find culture!" );
+
+				return ( false );
+			}
+
 			string szJson = File.ReadAllText( szFile ).ToLower( );
 			CustomClass oCustomClass = JsonConvert.DeserializeObject<CustomClass>( szJson );
 

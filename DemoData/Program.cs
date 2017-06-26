@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace DemoData
 {
@@ -23,7 +24,33 @@ namespace DemoData
 
 			if ( oArgs.Contains( "-list" ) )
 			{
-				// list cultures
+				string[ ] szFolders = Directory.GetDirectories( string.Format( @"{0}\Culture", Path.GetDirectoryName( Assembly.GetEntryAssembly( ).Location ) ) );
+
+				Console.WriteLine( "Listing cultures..." );
+
+				if ( szFolders.Length > 0 )
+				{
+					foreach ( string szFolder in szFolders )
+					{
+						DirectoryInfo oDir = new DirectoryInfo( szFolder );
+
+						Console.WriteLine( string.Format( "\t{0}", oDir.Name ) );
+						Console.WriteLine( string.Format( "\t\tFunctions definition file is {0}...", File.Exists( Path.Combine( szFolder, "func.json" ) ) ? "presented" : "missing" ) );
+						Console.WriteLine( "\t\tResources:" );
+
+						foreach ( FileInfo oFile in oDir.GetFiles( ) )
+						{
+							if ( !oFile.Name.ToLower( ).Equals( "func.json" ) )
+							{
+								Console.WriteLine( string.Format( "\t\t\t{0}", oFile.Name.Replace( oFile.Extension, string.Empty ) ) );
+							}
+						}
+					}
+				}
+				else
+				{
+					Console.WriteLine( "...none found..." );
+				}
 			}
 
 			if ( oArgs.Contains( "-comp" ) )
@@ -34,9 +61,9 @@ namespace DemoData
 				{
 					string szCulture = oArgs[nIndex];
 
-					Console.WriteLine( string.Format("Compiling culture '{0}'...", szCulture));
+					Console.WriteLine( string.Format( "Compiling culture '{0}'...", szCulture ) );
 
-					if(!Compiler.Compile( szCulture ) )
+					if ( !Compiler.Compile( szCulture ) )
 					{
 						return;
 					}
@@ -53,11 +80,11 @@ namespace DemoData
 		static void PrintHelp ( )
 		{
 			Console.WriteLine( );
-			Console.WriteLine( string.Format( "VERSION: {0}", Assembly.GetExecutingAssembly().GetName().Version.ToString() ) );
+			Console.WriteLine( string.Format( "VERSION: {0}", Assembly.GetEntryAssembly( ).GetName( ).Version.ToString( ) ) );
 
 			Console.WriteLine( );
 			Console.WriteLine( "USAGE:" );
-			Console.WriteLine( "\tDemoData");
+			Console.WriteLine( "\tDemoData" );
 			Console.WriteLine( "\t\t-list |" );
 			Console.WriteLine( "\t\t-comp={culture} |" );
 			Console.WriteLine( "\t\t-cmd={file}" );
