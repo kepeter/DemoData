@@ -1,9 +1,10 @@
 ﻿{
-	"culture": "en",
 	"compile": false,
 	"tables": [
 		{
 			"name": "person",
+			"output": "csv",
+			"header": "true",
 			"rows": 1000,
 			"columns": [
 				{
@@ -15,8 +16,16 @@
 					"func": "[last]"
 				},
 				{
+					"name": "email",
+					"func": "[first].[last]@lazy.com"
+				},
+				{
 					"name": "age",
-					"func": "<number(3)>"
+					"func": "<number(2)>"
+				},
+				{
+					"name": "salary",
+					"func": "<number(7)>.<number(2)>"
 				}
 			]
 		}

@@ -63,7 +63,7 @@ namespace DemoData
 
 					Console.WriteLine( string.Format( "Compiling culture '{0}'...", szCulture ) );
 
-					if ( !Compiler.Compile( szCulture ) )
+					if ( !CultureCompiler.Compile( szCulture ) )
 					{
 						return;
 					}
@@ -71,6 +71,30 @@ namespace DemoData
 				else
 				{
 					Console.WriteLine( "ERROR. Missing culture for -comp option..." );
+
+					return;
+				}
+			}
+
+			if ( oArgs.Contains( "-cmd" ) )
+			{
+				nIndex = oArgs.IndexOf( "-cmd" ) + 2;
+
+				if ( oArgs.Count > nIndex )
+				{
+					string szCommandFile = oArgs[nIndex - 1];
+					string szCulture = oArgs[nIndex];
+
+					Console.WriteLine( string.Format( "Executing command from '{0}', using culture '{1}'...", szCommandFile, szCulture ) );
+
+					if ( !CommandHandler.Execute( szCommandFile, szCulture ) )
+					{
+						return;
+					}
+				}
+				else
+				{
+					Console.WriteLine( "ERROR. Missing command file or culture for -cmd option..." );
 
 					return;
 				}
@@ -86,13 +110,13 @@ namespace DemoData
 			Console.WriteLine( "USAGE:" );
 			Console.WriteLine( "\tDemoData" );
 			Console.WriteLine( "\t\t-list |" );
-			Console.WriteLine( "\t\t-comp={culture} |" );
-			Console.WriteLine( "\t\t-cmd={file}" );
+			Console.WriteLine( "\t\t-comp {culture} |" );
+			Console.WriteLine( "\t\t-cmd {file} {culture}" );
 			Console.WriteLine( );
 			Console.WriteLine( "where:" );
 			Console.WriteLine( "\t-list\t\t\tLists all the cultures currently exists" );
-			Console.WriteLine( "\t-comp={culture}\t\tCompiles the specified 'culture'" );
-			Console.WriteLine( "\t-cmd={file}\t\tRun the commands in 'file'" );
+			Console.WriteLine( "\t-comp {culture}\t\tCompiles the specified 'culture'" );
+			Console.WriteLine( "\t-cmd {file} {culture}\t\tRun the commands in 'file'" );
 
 			Console.WriteLine( );
 		}

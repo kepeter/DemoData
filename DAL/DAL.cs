@@ -163,7 +163,7 @@ namespace DemoData
 
 		#region Resource handling
 
-		protected static string Resource ( string Name )
+		public static string Resource ( string Name )
 		{
 			if ( LoadResource( Name ) )
 			{

@@ -6,13 +6,12 @@
 			"func": "<number(3)>-<number(7)>"
 		},
 		{
-			"name": "firsname",
+			"name": "firstname",
 			"func": "[first]"
 		},
 		{
 			"name": "mail",
 			"func": "[first]@dummy.com",
-			"case": "lower"
 		},
 		{
 			"name": "money",

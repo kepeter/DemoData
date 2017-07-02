@@ -11,28 +11,169 @@ using Newtonsoft.Json;
 
 namespace DemoData
 {
-	public class CustomFunction
+	public enum CommandOutput
+	{
+		CSV,
+		JSON,
+	}
+
+	public struct CommandTableColum
 	{
 		public string Name;
 		public string Func;
 	}
 
-	public class CustomClass
+	public struct CommandTable
 	{
-		public string Inherit;
-		public CustomFunction[ ] Local;
+		public string Name;
+		public CommandOutput Output;
+		public bool Header;
+		public int Rows;
+		public CommandTableColum[ ] Columns;
 	}
 
-	public class Compiler
+	public struct Command
 	{
-		static List<string> _Func = new List<string>( );
-		static int _Index = 0;
-		static TextInfo _TextInfo = new CultureInfo( "en", false ).TextInfo;
+		public bool Compile;
+		public CommandTable[ ] Tables;
+	}
 
+	public class CommandHandler
+	{
+		public static bool Execute ( string CommandFile, string Culture )
+		{
+			StringBuilder oCode = new StringBuilder( );
+			string szFile = string.Format( @"{0}\{1}", Path.GetDirectoryName( System.Reflection.Assembly.GetEntryAssembly( ).Location ), CommandFile );
+			TextInfo oTextInfo = new CultureInfo( "en", false ).TextInfo;
+
+			if ( string.IsNullOrEmpty( Culture ) )
+			{
+				Console.WriteLine( "...ERROR: Culture must be defined!" );
+
+				return ( false );
+			}
+
+			if ( !File.Exists( szFile ) )
+			{
+				Console.WriteLine( "...ERROR: Can not find command file!" );
+
+				return ( false );
+			}
+
+			string szJson = File.ReadAllText( szFile ).ToLower( );
+			Command oCommand = JsonConvert.DeserializeObject<Command>( szJson );
+
+			if ( oCommand.Compile )
+			{
+				if ( !CultureCompiler.Compile( Culture ) )
+				{
+					return ( false );
+				}
+			}
+
+			Regex oRegResource = new Regex( @"\[(.*?)\]" );
+			Regex oRegFunction = new Regex( @"\<(.*?)\>" );
+			Dictionary<string, string> oProperties = new Dictionary<string, string>( );
+
+			oCode.AppendLine( "using System.Linq;" );
+			oCode.AppendLine( "namespace DemoData {" );
+
+			foreach ( CommandTable oTable in oCommand.Tables )
+			{
+				oCode.AppendLine( string.Format( "public class {0} {{", oTextInfo.ToTitleCase( oTable.Name ) ) );
+				List<string> oLines = new List<string>( );
+				List<string> oFunc = new List<string>( );
+				int nIndex = 0;
+
+				foreach ( CommandTableColum oColumn in oTable.Columns )
+				{
+					string szFinalFormat = oColumn.Func;
+
+					Match oMatch = oRegResource.Match( oColumn.Func );
+
+					while ( oMatch.Success )
+					{
+						string szKey = oTextInfo.ToTitleCase( oMatch.Value.Replace( "[", "" ).Replace( "]", "" ) );
+
+						if ( !oProperties.ContainsKey( szKey ) )
+						{
+							oProperties.Add( szKey, string.Format( "Resource({0})", oMatch.Value.Replace( '[', '"' ).Replace( ']', '"' ) ) );
+
+							oCode.AppendLine( string.Format( "private dynamic _{0};", szKey ) );
+							oCode.AppendLine( string.Format( "public dynamic {0} {{ get {{ return ( _{0} ); }} }}", szKey ) );
+						}
+
+						oFunc.Add( szKey );
+
+						szFinalFormat = szFinalFormat.Replace( oMatch.Value, string.Format( "{{{0}}}", nIndex++ ) );
+
+						oMatch = oMatch.NextMatch( );
+					}
+
+					oMatch = oRegFunction.Match( oColumn.Func );
+
+					while ( oMatch.Success )
+					{
+						oFunc.Add( oTextInfo.ToTitleCase( string.Format( "{0}", oMatch.Value.Replace( "<", "" ).Replace( ">", "" ) ) ) );
+
+						szFinalFormat = szFinalFormat.Replace( oMatch.Value, string.Format( "{{{0}}}", nIndex++ ) );
+
+						oMatch = oMatch.NextMatch( );
+					}
+
+					if ( szFinalFormat.Contains( '{' ) )
+					{
+						oLines.Add( string.Format( "{0} = string.Format({1}),", oTextInfo.ToTitleCase( oColumn.Name ), szFinalFormat ) );
+					}
+				}
+
+				oCode.AppendLine( "public void Next() {" );
+				foreach ( KeyValuePair<string, string> oProperty in oProperties )
+				{
+					oCode.AppendLine( string.Format( "_{0} = DAL{1}.{2};", oProperty.Key, Culture, oProperty.Value ) );
+				}
+				oCode.AppendLine( "}" );
+
+				oCode.AppendLine( "public dynamic Record() {" );
+
+				string szObject = string.Join( Environment.NewLine, oLines.ToArray( ) );
+				szObject = string.Format( szObject, oFunc.ToArray( ) );
+				szObject = string.Format( "return( new {{{0}}} );", szObject );
+
+				oCode.AppendLine( szObject );
+
+				oCode.AppendLine( "}" );
+
+				oCode.AppendLine( "}" );
+			}
+
+			oCode.AppendLine( "}" );
+
+			string szCode = oCode.ToString( );
+
+			return ( true );
+		}
+	}
+
+	public struct CultureFunction
+	{
+		public string Name;
+		public string Func;
+	}
+
+	public struct Culture
+	{
+		public string Inherit;
+		public CultureFunction[ ] Local;
+	}
+
+	public class CultureCompiler
+	{
 		public static bool Compile ( string Culture )
 		{
 			StringBuilder oCode = new StringBuilder( );
 			string szFile = string.Format( @"{0}\Culture\{1}\func.json", Path.GetDirectoryName( System.Reflection.Assembly.GetEntryAssembly( ).Location ), Culture );
+			TextInfo oTextInfo = new CultureInfo( "en", false ).TextInfo;
 
 			if ( !File.Exists( szFile ) )
 			{
@@ -42,31 +183,47 @@ namespace DemoData
 			}
 
 			string szJson = File.ReadAllText( szFile ).ToLower( );
-			CustomClass oCustomClass = JsonConvert.DeserializeObject<CustomClass>( szJson );
+			Culture oCustom = JsonConvert.DeserializeObject<Culture>( szJson );
+
+			Regex oRegResource = new Regex( @"\[(.*?)\]" );
+			Regex oRegFunction = new Regex( @"\<(.*?)\>" );
 
 			oCode.AppendLine( "using System.Linq;" );
 			oCode.AppendLine( "namespace DemoData {" );
-			oCode.AppendLine( string.Format( "public class DAL{0} : DAL{1} {{", Culture, oCustomClass.Inherit ) );
+			oCode.AppendLine( string.Format( "public class DAL{0} : DAL{1} {{", Culture, oCustom.Inherit ) );
 
-			foreach ( CustomFunction oCustomFunction in oCustomClass.Local )
+			foreach ( CultureFunction oCustomFunction in oCustom.Local )
 			{
-				_Func.Clear( );
-				_Index = 0;
+				List<string> oFunc = new List<string>( );
+				int nIndex = 0;
 
-				Regex oRegResource = new Regex( @"\[(.*?)\]" );
-				string szResultResource = oRegResource.Replace( oCustomFunction.Func, new MatchEvaluator( Resource ) );
+				string szFinalFormat = oCustomFunction.Func;
 
-				Regex oRegFunction = new Regex( @"\<(.*?)\>" );
-				string szResultFunction = oRegFunction.Replace( szResultResource, new MatchEvaluator( Function ) );
+				Match oMatch = oRegResource.Match( oCustomFunction.Func );
 
+				while ( oMatch.Success )
+				{
+					oFunc.Add( string.Format( "Resource({0})", oMatch.Value.Replace( '[', '"' ).Replace( ']', '"' ) ) );
 
-				string szResult = string.Format( "string szResult = \"{0}\";", szResultFunction );
-				string szLoop = string.Format( "while ( szResult.Contains( '{{' ) ) {{ szResult = string.Format( szResult, {0} ); }}", string.Join( ", ", _Func.ToArray( ) ) );
+					szFinalFormat = szFinalFormat.Replace( oMatch.Value, string.Format( "{{{0}}}", nIndex++ ) );
 
-				szResult += szLoop;
-				szResult += "return( szResult );";
+					oMatch = oMatch.NextMatch( );
+				}
 
-				oCode.AppendLine( string.Format( "public dynamic {0} () {{", _TextInfo.ToTitleCase( oCustomFunction.Name ) ) );
+				oMatch = oRegFunction.Match( szFinalFormat );
+
+				while ( oMatch.Success )
+				{
+					oFunc.Add( oTextInfo.ToTitleCase( string.Format( "{0}", oMatch.Value.Replace( "<", "" ).Replace( ">", "" ) ) ) );
+
+					szFinalFormat = szFinalFormat.Replace( oMatch.Value, string.Format( "{{{0}}}", nIndex++ ) );
+
+					oMatch = oMatch.NextMatch( );
+				}
+
+				string szResult = string.Format( "return( string.Format( \"{0}\", {1} ) );", szFinalFormat, string.Join( ", ", oFunc.ToArray( ) ) );
+
+				oCode.AppendLine( string.Format( "public dynamic {0} () {{", oTextInfo.ToTitleCase( oCustomFunction.Name ) ) );
 				oCode.AppendLine( szResult );
 				oCode.AppendLine( "}" );
 			}
@@ -104,28 +261,6 @@ namespace DemoData
 
 				return ( true );
 			}
-		}
-
-
-		static string Resource ( Match Match )
-		{
-			string szMatch = Match.ToString( );
-
-			_Func.Add( string.Format( "Resource({0})", szMatch.Replace( '[', '"' ).Replace( ']', '"' ) ) );
-
-			return ( string.Format( "{{{0}}}", _Index++ ) );
-		}
-
-		static string Function ( Match Match )
-		{
-			string szMatch = Match.ToString( );
-
-			string szFunc = string.Format( "{0}", szMatch.Replace( "<", "" ).Replace( ">", "" ) );
-			szFunc = _TextInfo.ToTitleCase( szFunc );
-
-			_Func.Add( szFunc.Contains( '{' ) ? string.Format( "\"{0}\"", szFunc ) : szFunc );
-
-			return ( string.Format( "{{{0}}}", _Index++ ) );
 		}
 	}
 }
