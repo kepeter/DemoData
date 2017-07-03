@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 namespace DemoData
 {
 	public class DAL
-    {
+	{
 		private static Random _Random = new Random( );
 		private static CultureInfo _CultureInfo;
 		private static int _SID = 0;

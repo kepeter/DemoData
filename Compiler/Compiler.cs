@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.CSharp;
@@ -36,6 +37,43 @@ namespace DemoData
 	{
 		public bool Compile;
 		public CommandTable[ ] Tables;
+	}
+
+	public class Helpers
+	{
+		public static string ToCsv<T> ( string separator, IEnumerable<T> objectlist )
+		{
+			Type t = typeof( T );
+			FieldInfo[ ] fields = t.GetFields( );
+
+			string header = String.Join( separator, fields.Select( f => f.Name ).ToArray( ) );
+
+			StringBuilder csvdata = new StringBuilder( );
+			csvdata.AppendLine( header );
+
+			foreach ( var o in objectlist )
+				csvdata.AppendLine( ToCsvFields( separator, fields, o ) );
+
+			return csvdata.ToString( );
+		}
+
+		public static string ToCsvFields ( string separator, FieldInfo[ ] fields, object o )
+		{
+			StringBuilder linie = new StringBuilder( );
+
+			foreach ( var f in fields )
+			{
+				if ( linie.Length > 0 )
+					linie.Append( separator );
+
+				var x = f.GetValue( o );
+
+				if ( x != null )
+					linie.Append( x.ToString( ) );
+			}
+
+			return linie.ToString( );
+		}
 	}
 
 	public class CommandHandler
@@ -73,20 +111,22 @@ namespace DemoData
 
 			Regex oRegResource = new Regex( @"\[(.*?)\]" );
 			Regex oRegFunction = new Regex( @"\<(.*?)\>" );
-			Dictionary<string, string> oProperties = new Dictionary<string, string>( );
 
 			oCode.AppendLine( "using System.Linq;" );
 			oCode.AppendLine( "namespace DemoData {" );
 
 			foreach ( CommandTable oTable in oCommand.Tables )
 			{
+				Dictionary<string, string> oProperties = new Dictionary<string, string>( );
+
 				oCode.AppendLine( string.Format( "public class {0} {{", oTextInfo.ToTitleCase( oTable.Name ) ) );
 				List<string> oLines = new List<string>( );
-				List<string> oFunc = new List<string>( );
-				int nIndex = 0;
 
 				foreach ( CommandTableColum oColumn in oTable.Columns )
 				{
+					List<string> oFunc = new List<string>( );
+					int nIndex = 0;
+
 					string szFinalFormat = oColumn.Func;
 
 					Match oMatch = oRegResource.Match( oColumn.Func );
@@ -99,8 +139,7 @@ namespace DemoData
 						{
 							oProperties.Add( szKey, string.Format( "Resource({0})", oMatch.Value.Replace( '[', '"' ).Replace( ']', '"' ) ) );
 
-							oCode.AppendLine( string.Format( "private dynamic _{0};", szKey ) );
-							oCode.AppendLine( string.Format( "public dynamic {0} {{ get {{ return ( _{0} ); }} }}", szKey ) );
+							oCode.AppendLine( string.Format( "dynamic {0};", szKey ) );
 						}
 
 						oFunc.Add( szKey );
@@ -114,7 +153,7 @@ namespace DemoData
 
 					while ( oMatch.Success )
 					{
-						oFunc.Add( oTextInfo.ToTitleCase( string.Format( "{0}", oMatch.Value.Replace( "<", "" ).Replace( ">", "" ) ) ) );
+						oFunc.Add( string.Format("DAL{0}.{1}", Culture, oTextInfo.ToTitleCase( string.Format( "{0}", oMatch.Value.Replace( "<", "" ).Replace( ">", "" ) ) ) ) );
 
 						szFinalFormat = szFinalFormat.Replace( oMatch.Value, string.Format( "{{{0}}}", nIndex++ ) );
 
@@ -123,26 +162,28 @@ namespace DemoData
 
 					if ( szFinalFormat.Contains( '{' ) )
 					{
-						oLines.Add( string.Format( "{0} = string.Format({1}),", oTextInfo.ToTitleCase( oColumn.Name ), szFinalFormat ) );
+						oLines.Add( string.Format( "{0} = string.Format(\"{1}\", {2}),", oTextInfo.ToTitleCase( oColumn.Name ), szFinalFormat, string.Join( ", ", oFunc.ToArray( ) ) ) );
 					}
 				}
 
-				oCode.AppendLine( "public void Next() {" );
+				oCode.AppendLine( "void Next() {" );
 				foreach ( KeyValuePair<string, string> oProperty in oProperties )
 				{
-					oCode.AppendLine( string.Format( "_{0} = DAL{1}.{2};", oProperty.Key, Culture, oProperty.Value ) );
+					oCode.AppendLine( string.Format( "{0} = DAL{1}.{2};", oProperty.Key, Culture, oProperty.Value ) );
 				}
 				oCode.AppendLine( "}" );
 
-				oCode.AppendLine( "public dynamic Record() {" );
+				oCode.AppendLine( "private dynamic Record() {" );
+				oCode.AppendLine( "Next();" );
 
 				string szObject = string.Join( Environment.NewLine, oLines.ToArray( ) );
-				szObject = string.Format( szObject, oFunc.ToArray( ) );
 				szObject = string.Format( "return( new {{{0}}} );", szObject );
 
 				oCode.AppendLine( szObject );
 
 				oCode.AppendLine( "}" );
+
+				oCode.AppendLine( string.Format( "public dynamic[ ] Set ( ) {{ DAL{1}.Reset( \"{1}\" ); dynamic[ ] oRecordSet = new dynamic[{0}]; for (int i = 0; i < {0}; i++ ) {{ oRecordSet[i] = Record( ); }} return ( oRecordSet ); }}", oTable.Rows, Culture ) );
 
 				oCode.AppendLine( "}" );
 			}
