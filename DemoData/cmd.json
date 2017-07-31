@@ -4,7 +4,6 @@
 		{
 			"name": "person",
 			"output": "csv",
-			"header": "true",
 			"rows": 1000,
 			"columns": [
 				{
@@ -31,8 +30,7 @@
 		},
 		{
 			"name": "person_phones",
-			"output": "csv",
-			"header": "true",
+			"output": "json",
 			"rows": 1000,
 			"columns": [
 				{

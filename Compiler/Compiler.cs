@@ -3,213 +3,31 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.CSharp;
 using Newtonsoft.Json;
 
+using static DemoData.Compiler.Culture;
+
 namespace DemoData
 {
-	public enum CommandOutput
+	public class Compiler
 	{
-		CSV,
-		JSON,
-	}
-
-	public struct CommandTableColum
-	{
-		public string Name;
-		public string Func;
-	}
-
-	public struct CommandTable
-	{
-		public string Name;
-		public CommandOutput Output;
-		public bool Header;
-		public int Rows;
-		public CommandTableColum[ ] Columns;
-	}
-
-	public struct Command
-	{
-		public bool Compile;
-		public CommandTable[ ] Tables;
-	}
-
-	public class Helpers
-	{
-		public static string ToCsv<T> ( string separator, IEnumerable<T> objectlist )
+#pragma warning disable CS0649
+		internal struct Culture
 		{
-			Type t = typeof( T );
-			FieldInfo[ ] fields = t.GetFields( );
+			public struct Function
+			{
+				public string Name;
+				public string Func;
+			}
 
-			string header = String.Join( separator, fields.Select( f => f.Name ).ToArray( ) );
-
-			StringBuilder csvdata = new StringBuilder( );
-			csvdata.AppendLine( header );
-
-			foreach ( var o in objectlist )
-				csvdata.AppendLine( ToCsvFields( separator, fields, o ) );
-
-			return csvdata.ToString( );
+			public string Inherit;
+			public Function[ ] Local;
 		}
+#pragma warning restore CS0649
 
-		public static string ToCsvFields ( string separator, FieldInfo[ ] fields, object o )
-		{
-			StringBuilder linie = new StringBuilder( );
-
-			foreach ( var f in fields )
-			{
-				if ( linie.Length > 0 )
-					linie.Append( separator );
-
-				var x = f.GetValue( o );
-
-				if ( x != null )
-					linie.Append( x.ToString( ) );
-			}
-
-			return linie.ToString( );
-		}
-	}
-
-	public class CommandHandler
-	{
-		public static bool Execute ( string CommandFile, string Culture )
-		{
-			StringBuilder oCode = new StringBuilder( );
-			string szFile = string.Format( @"{0}\{1}", Path.GetDirectoryName( System.Reflection.Assembly.GetEntryAssembly( ).Location ), CommandFile );
-			TextInfo oTextInfo = new CultureInfo( "en", false ).TextInfo;
-
-			if ( string.IsNullOrEmpty( Culture ) )
-			{
-				Console.WriteLine( "...ERROR: Culture must be defined!" );
-
-				return ( false );
-			}
-
-			if ( !File.Exists( szFile ) )
-			{
-				Console.WriteLine( "...ERROR: Can not find command file!" );
-
-				return ( false );
-			}
-
-			string szJson = File.ReadAllText( szFile ).ToLower( );
-			Command oCommand = JsonConvert.DeserializeObject<Command>( szJson );
-
-			if ( oCommand.Compile )
-			{
-				if ( !CultureCompiler.Compile( Culture ) )
-				{
-					return ( false );
-				}
-			}
-
-			Regex oRegResource = new Regex( @"\[(.*?)\]" );
-			Regex oRegFunction = new Regex( @"\<(.*?)\>" );
-
-			oCode.AppendLine( "using System.Linq;" );
-			oCode.AppendLine( "namespace DemoData {" );
-
-			foreach ( CommandTable oTable in oCommand.Tables )
-			{
-				Dictionary<string, string> oProperties = new Dictionary<string, string>( );
-
-				oCode.AppendLine( string.Format( "public class {0} {{", oTextInfo.ToTitleCase( oTable.Name ) ) );
-				List<string> oLines = new List<string>( );
-
-				foreach ( CommandTableColum oColumn in oTable.Columns )
-				{
-					List<string> oFunc = new List<string>( );
-					int nIndex = 0;
-
-					string szFinalFormat = oColumn.Func;
-
-					Match oMatch = oRegResource.Match( oColumn.Func );
-
-					while ( oMatch.Success )
-					{
-						string szKey = oTextInfo.ToTitleCase( oMatch.Value.Replace( "[", "" ).Replace( "]", "" ) );
-
-						if ( !oProperties.ContainsKey( szKey ) )
-						{
-							oProperties.Add( szKey, string.Format( "Resource({0})", oMatch.Value.Replace( '[', '"' ).Replace( ']', '"' ) ) );
-
-							oCode.AppendLine( string.Format( "dynamic {0};", szKey ) );
-						}
-
-						oFunc.Add( szKey );
-
-						szFinalFormat = szFinalFormat.Replace( oMatch.Value, string.Format( "{{{0}}}", nIndex++ ) );
-
-						oMatch = oMatch.NextMatch( );
-					}
-
-					oMatch = oRegFunction.Match( oColumn.Func );
-
-					while ( oMatch.Success )
-					{
-						oFunc.Add( string.Format("DAL{0}.{1}", Culture, oTextInfo.ToTitleCase( string.Format( "{0}", oMatch.Value.Replace( "<", "" ).Replace( ">", "" ) ) ) ) );
-
-						szFinalFormat = szFinalFormat.Replace( oMatch.Value, string.Format( "{{{0}}}", nIndex++ ) );
-
-						oMatch = oMatch.NextMatch( );
-					}
-
-					if ( szFinalFormat.Contains( '{' ) )
-					{
-						oLines.Add( string.Format( "{0} = string.Format(\"{1}\", {2}),", oTextInfo.ToTitleCase( oColumn.Name ), szFinalFormat, string.Join( ", ", oFunc.ToArray( ) ) ) );
-					}
-				}
-
-				oCode.AppendLine( "void Next() {" );
-				foreach ( KeyValuePair<string, string> oProperty in oProperties )
-				{
-					oCode.AppendLine( string.Format( "{0} = DAL{1}.{2};", oProperty.Key, Culture, oProperty.Value ) );
-				}
-				oCode.AppendLine( "}" );
-
-				oCode.AppendLine( "private dynamic Record() {" );
-				oCode.AppendLine( "Next();" );
-
-				string szObject = string.Join( Environment.NewLine, oLines.ToArray( ) );
-				szObject = string.Format( "return( new {{{0}}} );", szObject );
-
-				oCode.AppendLine( szObject );
-
-				oCode.AppendLine( "}" );
-
-				oCode.AppendLine( string.Format( "public dynamic[ ] Set ( ) {{ DAL{1}.Reset( \"{1}\" ); dynamic[ ] oRecordSet = new dynamic[{0}]; for (int i = 0; i < {0}; i++ ) {{ oRecordSet[i] = Record( ); }} return ( oRecordSet ); }}", oTable.Rows, Culture ) );
-
-				oCode.AppendLine( "}" );
-			}
-
-			oCode.AppendLine( "}" );
-
-			string szCode = oCode.ToString( );
-
-			return ( true );
-		}
-	}
-
-	public struct CultureFunction
-	{
-		public string Name;
-		public string Func;
-	}
-
-	public struct Culture
-	{
-		public string Inherit;
-		public CultureFunction[ ] Local;
-	}
-
-	public class CultureCompiler
-	{
 		public static bool Compile ( string Culture )
 		{
 			StringBuilder oCode = new StringBuilder( );
@@ -231,9 +49,9 @@ namespace DemoData
 
 			oCode.AppendLine( "using System.Linq;" );
 			oCode.AppendLine( "namespace DemoData {" );
-			oCode.AppendLine( string.Format( "public class DAL{0} : DAL{1} {{", Culture, oCustom.Inherit ) );
+			oCode.AppendLine( string.Format( "public class Data{0} : Data{1} {{", Culture, oCustom.Inherit ) );
 
-			foreach ( CultureFunction oCustomFunction in oCustom.Local )
+			foreach ( Function oCustomFunction in oCustom.Local )
 			{
 				List<string> oFunc = new List<string>( );
 				int nIndex = 0;
@@ -278,11 +96,11 @@ namespace DemoData
 			CompilerParameters parameters = new CompilerParameters( );
 
 			parameters.ReferencedAssemblies.Add( "System.Core.dll" );
-			parameters.ReferencedAssemblies.Add( "DAL.dll" );
+			parameters.ReferencedAssemblies.Add( "Data.dll" );
 			parameters.GenerateInMemory = false;
 			parameters.GenerateExecutable = false;
-			parameters.OutputAssembly = string.Format( "DAL{0}.dll", Culture );
-			parameters.MainClass = string.Format( "DAL{0}", Culture );
+			parameters.OutputAssembly = string.Format( "Data{0}.dll", Culture );
+			parameters.MainClass = string.Format( "Data{0}", Culture );
 
 			CompilerResults results = provider.CompileAssemblyFromSource( parameters, szCode );
 

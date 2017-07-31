@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using Newtonsoft.Json;
 
 namespace DemoData
 {
@@ -16,7 +13,7 @@ namespace DemoData
 			List<string> oArgs = args.ToList( );
 			int nIndex;
 
-			if ( args.Count( ) == 0 )
+			if ( oArgs.Count( ) == 0 )
 			{
 				PrintHelp( );
 
@@ -64,7 +61,7 @@ namespace DemoData
 
 					Console.WriteLine( string.Format( "Compiling culture '{0}'...", szCulture ) );
 
-					if ( !CultureCompiler.Compile( szCulture ) )
+					if ( !Compiler.Compile( szCulture ) )
 					{
 						return;
 					}
@@ -88,7 +85,7 @@ namespace DemoData
 
 					Console.WriteLine( string.Format( "Executing command from '{0}', using culture '{1}'...", szCommandFile, szCulture ) );
 
-					if ( !CommandHandler.Execute( szCommandFile, szCulture ) )
+					if ( !Command.Execute( szCommandFile, szCulture ) )
 					{
 						return;
 					}

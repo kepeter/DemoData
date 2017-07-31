@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 namespace DemoData
 {
-	public class DAL
+	public class Data
 	{
 		private static Random _Random = new Random( );
 		private static CultureInfo _CultureInfo;
