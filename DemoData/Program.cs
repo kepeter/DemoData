@@ -13,7 +13,8 @@ namespace DemoData
 			List<string> oArgs = args.ToList( );
 			int nIndex;
 
-			if ( oArgs.Count( ) == 0 )
+			if (( oArgs.Count( ) == 0 ) ||
+				( !oArgs.Contains( "-list" ) && !oArgs.Contains( "-comp" ) && !oArgs.Contains( "-cmd" ) ) )
 			{
 				PrintHelp( );
 
@@ -101,22 +102,21 @@ namespace DemoData
 
 		static void PrintHelp ( )
 		{
-			Console.WriteLine( );
+			Console.WriteLine( "DemoData" );
 			Console.WriteLine( string.Format( "VERSION: {0}", Assembly.GetEntryAssembly( ).GetName( ).Version.ToString( ) ) );
 
 			Console.WriteLine( );
 			Console.WriteLine( "USAGE:" );
-			Console.WriteLine( "\tDemoData" );
-			Console.WriteLine( "\t\t-list |" );
-			Console.WriteLine( "\t\t-comp {culture} |" );
-			Console.WriteLine( "\t\t-cmd {file} {culture}" );
+			Console.WriteLine( "  DemoData -list | -comp {culture} | -cmd {file} {culture}" );
 			Console.WriteLine( );
 			Console.WriteLine( "where:" );
-			Console.WriteLine( "\t-list\t\t\tLists all the cultures currently exists" );
-			Console.WriteLine( "\t-comp {culture}\t\tCompiles the specified 'culture'" );
-			Console.WriteLine( "\t-cmd {file} {culture}\t\tRun the commands in 'file'" );
+			Console.WriteLine( "  -list                  Lists all the cultures currently exists," );
+			Console.WriteLine( "                         including their resources" );
+			Console.WriteLine( "  -comp {culture}        Compiles the specified 'culture'" );
+			Console.WriteLine( "  -cmd {file} {culture}  Runs the commands in 'file' using 'culture'" );
 
 			Console.WriteLine( );
+			Console.WriteLine( "DETAILS: https://www.codeproject.com/Articles/1198666/Demo-data" );
 		}
 	}
 }

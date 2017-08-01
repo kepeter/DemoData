@@ -1,5 +1,5 @@
 ﻿{
-	"compile": false,
+	"compile": true,
 	"tables": [
 		{
 			"name": "person",
