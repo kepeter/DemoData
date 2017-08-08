@@ -47,12 +47,11 @@ namespace DemoData
 		public static bool Execute ( string CommandFile, string Culture )
 		{
 			StringBuilder oCode = new StringBuilder( );
-			string szFile = string.Format( @"{0}\{1}", Path.GetDirectoryName( System.Reflection.Assembly.GetEntryAssembly( ).Location ), CommandFile );
-			TextInfo oTextInfo = new CultureInfo( "en", false ).TextInfo;
+			string szFile = string.Format( @"{0}\{1}", Helpers.Root, CommandFile );
 
 			if ( !File.Exists( szFile ) )
 			{
-				Console.WriteLine( "...ERROR: Can not find command file!" );
+				Console.WriteLine( "ERROR: Can not find command file!" );
 
 				return ( false );
 			}
@@ -68,9 +67,6 @@ namespace DemoData
 				}
 			}
 
-			Regex oRegResource = new Regex( @"\[(.*?)\]" );
-			Regex oRegFunction = new Regex( @"\<(.*?)\>" );
-
 			oCode.AppendLine( "using Newtonsoft.Json.Linq;" );
 			oCode.AppendLine( "namespace DemoData {" );
 
@@ -78,7 +74,7 @@ namespace DemoData
 			{
 				Dictionary<string, string> oProperties = new Dictionary<string, string>( );
 
-				oCode.AppendLine( string.Format( "public class {0} {{", oTextInfo.ToTitleCase( oTable.Name ) ) );
+				oCode.AppendLine( string.Format( "public class {0} {{", oTable.Name ) );
 				List<string> oLines = new List<string>( );
 
 				foreach ( Column oColumn in oTable.Columns )
@@ -88,15 +84,15 @@ namespace DemoData
 
 					string szFinalFormat = oColumn.Func;
 
-					Match oMatch = oRegResource.Match( oColumn.Func );
+					Match oMatch = Helpers.Resource.Match( oColumn.Func );
 
 					while ( oMatch.Success )
 					{
-						string szKey = oTextInfo.ToTitleCase( oMatch.Value.Replace( "[", "" ).Replace( "]", "" ) );
+						string szKey = Helpers.TextInfo.ToTitleCase( Helpers.Replace( Helpers.SquareToNothingRegex, Helpers.SquareToNothing, oMatch.Value ) );
 
 						if ( !oProperties.ContainsKey( szKey ) )
 						{
-							oProperties.Add( szKey, string.Format( "Resource({0})", oMatch.Value.Replace( '[', '"' ).Replace( ']', '"' ) ) );
+							oProperties.Add( szKey, string.Format( "Resource({0})", Helpers.Replace( Helpers.SquareToQuoteRegex, Helpers.SquareToQuote, oMatch.Value ) ) );
 
 							oCode.AppendLine( string.Format( "dynamic {0};", szKey ) );
 						}
@@ -108,11 +104,11 @@ namespace DemoData
 						oMatch = oMatch.NextMatch( );
 					}
 
-					oMatch = oRegFunction.Match( oColumn.Func );
+					oMatch = Helpers.Function.Match( oColumn.Func );
 
 					while ( oMatch.Success )
 					{
-						oFunc.Add( string.Format( "Data{0}.{1}", Culture, oTextInfo.ToTitleCase( string.Format( "{0}", oMatch.Value.Replace( "<", "" ).Replace( ">", "" ) ) ) ) );
+						oFunc.Add( string.Format( "Data{0}.{1}", Culture, Helpers.TextInfo.ToTitleCase( string.Format( "{0}", oMatch.Value.Replace( "<", "" ).Replace( ">", "" ) ) ) ) );
 
 						szFinalFormat = szFinalFormat.Replace( oMatch.Value, string.Format( "{{{0}}}", nIndex++ ) );
 
@@ -121,7 +117,7 @@ namespace DemoData
 
 					if ( szFinalFormat.Contains( '{' ) )
 					{
-						oLines.Add( string.Format( "{{\"{0}\", string.Format(\"{1}\", {2})}},", oTextInfo.ToTitleCase( oColumn.Name ), szFinalFormat, string.Join( ", ", oFunc.ToArray( ) ) ) );
+						oLines.Add( string.Format( "{{\"{0}\", string.Format(\"{1}\", {2})}},", Helpers.TextInfo.ToTitleCase( oColumn.Name ), szFinalFormat, string.Join( ", ", oFunc.ToArray( ) ) ) );
 					}
 				}
 
@@ -159,7 +155,7 @@ namespace DemoData
 
 			foreach ( Table oTable in oCommand.Tables )
 			{
-				oCode.AppendLine( string.Format( "{0} o{0} = new {0}( ); o{0}.WriteResult( );", oTextInfo.ToTitleCase( oTable.Name ) ) );
+				oCode.AppendLine( string.Format( "{0} o{0} = new {0}( ); o{0}.WriteResult( );", oTable.Name ) );
 			}
 
 			oCode.AppendLine( "}" );
@@ -169,45 +165,48 @@ namespace DemoData
 
 			string szCode = oCode.ToString( );
 
-			CSharpCodeProvider provider = new CSharpCodeProvider( );
-			CompilerParameters parameters = new CompilerParameters( );
+			CSharpCodeProvider oCodeProvider = new CSharpCodeProvider( );
+			CompilerParameters oParameters = new CompilerParameters( );
 
-			parameters.ReferencedAssemblies.Add( "System.dll" );
-			parameters.ReferencedAssemblies.Add( "System.Core.dll" );
-			parameters.ReferencedAssemblies.Add( "Microsoft.CSharp.dll" );
-			parameters.ReferencedAssemblies.Add( "Newtonsoft.Json.dll" );
-			parameters.ReferencedAssemblies.Add( "Data.dll" );
-			parameters.ReferencedAssemblies.Add( "Export.dll" );
-			parameters.ReferencedAssemblies.Add( string.Format( "Data{0}.dll", Culture ));
-			parameters.GenerateInMemory = true;
-			parameters.GenerateExecutable = false;
-			parameters.MainClass = "Execute";
+			oParameters.ReferencedAssemblies.Add( "System.dll" );
+			oParameters.ReferencedAssemblies.Add( "System.Core.dll" );
+			oParameters.ReferencedAssemblies.Add( "Microsoft.CSharp.dll" );
+			oParameters.ReferencedAssemblies.Add( "Newtonsoft.Json.dll" );
+			oParameters.ReferencedAssemblies.Add( "Data.dll" );
+			oParameters.ReferencedAssemblies.Add( "Export.dll" );
+			oParameters.ReferencedAssemblies.Add( string.Format( "Data{0}.dll", Culture ) );
 
-			CompilerResults results = provider.CompileAssemblyFromSource( parameters, szCode );
+			oParameters.GenerateInMemory = true;
+			oParameters.GenerateExecutable = false;
+			oParameters.MainClass = "Execute";
 
-			if ( results.Errors.HasErrors )
+			CompilerResults oResults = oCodeProvider.CompileAssemblyFromSource( oParameters, szCode );
+
+			if ( oResults.Errors.HasErrors )
 			{
-				Console.WriteLine( "...there were some errors:" );
-				foreach ( CompilerError error in results.Errors )
+				Console.WriteLine( "There were some errors:" );
+				foreach ( CompilerError oError in oResults.Errors )
 				{
-					Console.WriteLine( String.Format( "\t({0}): {1}", error.ErrorNumber, error.ErrorText ) );
+					Console.WriteLine( String.Format( "  ({0}): {1}, at ({2}, {3})", oError.ErrorNumber, oError.ErrorText, oError.Line, oError.Column ) );
 				}
+
+				Helpers.Dump( szCode );
 
 				return ( false );
 			}
 
-			var oType = results.CompiledAssembly.GetType( "DemoData.Execute" );
+			var oType = oResults.CompiledAssembly.GetType( "DemoData.Execute" );
 
 			if ( oType == null )
 			{
-				Console.WriteLine( "...ERROR: Compiled Assembly does not contain a class for Execute!" );
+				Console.WriteLine( "ERROR: Compiled Assembly does not contain a class for Execute..." );
 
-				return (false);
+				return ( false );
 			}
 
 			oType.GetMethod( "Run" ).Invoke( null, null );
 
-			Console.WriteLine( "...done." );
+			Console.WriteLine( "  ...done..." );
 
 			return ( true );
 		}

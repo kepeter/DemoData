@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace DemoData
 {
@@ -13,53 +14,57 @@ namespace DemoData
 			List<string> oArgs = args.ToList( );
 			int nIndex;
 
-			if (( oArgs.Count( ) == 0 ) ||
-				( !oArgs.Contains( "-list" ) && !oArgs.Contains( "-comp" ) && !oArgs.Contains( "-cmd" ) ) )
+			PrintHeader( );
+
+			if ( ( oArgs.Count( ) == 0 ) ||
+				( !oArgs.Contains( Helpers.Commands.List ) &&
+				  !oArgs.Contains( Helpers.Commands.Compile ) &&
+				  !oArgs.Contains( Helpers.Commands.Command ) ) )
 			{
 				PrintHelp( );
 
 				return;
 			}
 
-			if ( oArgs.Contains( "-list" ) )
+			if ( oArgs.Contains( Helpers.Commands.List ) )
 			{
-				string[ ] szFolders = Directory.GetDirectories( string.Format( @"{0}\Culture", Path.GetDirectoryName( Assembly.GetEntryAssembly( ).Location ) ) );
-
 				Console.WriteLine( "Listing cultures..." );
 
-				if ( szFolders.Length > 0 )
+				if ( Helpers.Cultures.Length > 0 )
 				{
-					foreach ( string szFolder in szFolders )
+					foreach ( string szCulture in Helpers.Cultures )
 					{
-						DirectoryInfo oDir = new DirectoryInfo( szFolder );
+						DirectoryInfo oDir = new DirectoryInfo( szCulture );
 
-						Console.WriteLine( string.Format( "\t{0}", oDir.Name ) );
-						Console.WriteLine( string.Format( "\t\tFunctions definition file is {0}...", File.Exists( Path.Combine( szFolder, "func.json" ) ) ? "presented" : "missing" ) );
-						Console.WriteLine( "\t\tResources:" );
+						Console.WriteLine( );
+						Console.WriteLine( string.Format( "  {0}", oDir.Name ) );
+						Console.WriteLine( string.Format( "    Functions definitions file is {0}...", File.Exists( Path.Combine( oDir.FullName, "func.json" ) ) ? "presented" : "missing" ) );
+						Console.WriteLine( "    Resources:" );
 
 						foreach ( FileInfo oFile in oDir.GetFiles( ) )
 						{
 							if ( !oFile.Name.ToLower( ).Equals( "func.json" ) )
 							{
-								Console.WriteLine( string.Format( "\t\t\t{0}", oFile.Name.Replace( oFile.Extension, string.Empty ) ) );
+								Console.WriteLine( string.Format( "      {0}", oFile.Name.Replace( oFile.Extension, string.Empty ) ) );
 							}
 						}
 					}
 				}
 				else
 				{
-					Console.WriteLine( "...none found..." );
+					Console.WriteLine( "  ...none found..." );
 				}
 			}
 
-			if ( oArgs.Contains( "-comp" ) )
+			if ( oArgs.Contains( Helpers.Commands.Compile ) )
 			{
-				nIndex = oArgs.IndexOf( "-comp" ) + 1;
+				nIndex = oArgs.IndexOf( Helpers.Commands.Compile ) + 1;
 
 				if ( oArgs.Count > nIndex )
 				{
 					string szCulture = oArgs[nIndex];
 
+					Console.WriteLine( );
 					Console.WriteLine( string.Format( "Compiling culture '{0}'...", szCulture ) );
 
 					if ( !Compiler.Compile( szCulture ) )
@@ -69,15 +74,15 @@ namespace DemoData
 				}
 				else
 				{
-					Console.WriteLine( "ERROR. Missing culture for -comp option..." );
+					Console.WriteLine( "ERROR. Missing culture..." );
 
 					return;
 				}
 			}
 
-			if ( oArgs.Contains( "-cmd" ) )
+			if ( oArgs.Contains( Helpers.Commands.Command ) )
 			{
-				nIndex = oArgs.IndexOf( "-cmd" ) + 2;
+				nIndex = oArgs.IndexOf( Helpers.Commands.Command ) + 2;
 
 				if ( oArgs.Count > nIndex )
 				{
@@ -93,30 +98,34 @@ namespace DemoData
 				}
 				else
 				{
-					Console.WriteLine( "ERROR. Missing command file or culture for -cmd option..." );
+					Console.WriteLine( "ERROR. Missing command file and/or culture..." );
 
 					return;
 				}
 			}
 		}
 
-		static void PrintHelp ( )
+		static void PrintHeader ( )
 		{
 			Console.WriteLine( "DemoData" );
-			Console.WriteLine( string.Format( "VERSION: {0}", Assembly.GetEntryAssembly( ).GetName( ).Version.ToString( ) ) );
+			Console.WriteLine( string.Format( "  Version: {0}", Assembly.GetEntryAssembly( ).GetName( ).Version.ToString( ) ) );
 
 			Console.WriteLine( );
+		}
+
+		static void PrintHelp ( )
+		{
 			Console.WriteLine( "USAGE:" );
 			Console.WriteLine( "  DemoData -list | -comp {culture} | -cmd {file} {culture}" );
 			Console.WriteLine( );
-			Console.WriteLine( "where:" );
+			Console.WriteLine( "Where:" );
 			Console.WriteLine( "  -list                  Lists all the cultures currently exists," );
 			Console.WriteLine( "                         including their resources" );
 			Console.WriteLine( "  -comp {culture}        Compiles the specified 'culture'" );
 			Console.WriteLine( "  -cmd {file} {culture}  Runs the commands in 'file' using 'culture'" );
 
 			Console.WriteLine( );
-			Console.WriteLine( "DETAILS: https://www.codeproject.com/Articles/1198666/Demo-data" );
+			Console.WriteLine( "Details: https://www.codeproject.com/Articles/1198666/Demo-data" );
 		}
 	}
 }

@@ -51,6 +51,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Command.cs" />
+    <Compile Include="Compiler.cs" />
+    <Compile Include="Helpers.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -80,14 +83,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Command\Command.csproj">
-      <Project>{E251808D-DA07-48E9-A7C6-FDCFF829907C}</Project>
-      <Name>Command</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Compiler\Compiler.csproj">
-      <Project>{f35fc466-d3a2-4b40-86f1-15fddfbbcf45}</Project>
-      <Name>Compiler</Name>
-    </ProjectReference>
     <ProjectReference Include="..\DAL\Data.csproj">
       <Project>{acb173f6-6ea3-43a6-99ee-e557ecb43d36}</Project>
       <Name>Data</Name>
