@@ -27,7 +27,7 @@
 					"func": "<number(2)>"
 				},
 				{
-					"name": "salary",
+					"name": "ballance",
 					"func": "<money()>"
 				}
 			]
