@@ -7,32 +7,9 @@
 			"rows": 1000,
 			"columns": [
 				{
-					"name": "first_name",
-					"func": "[first]"
+					"name": "id",
+					"func": "<sid()>"
 				},
-				{
-					"name": "last_name",
-					"func": "[last]"
-				},
-				{
-					"name": "email",
-					"func": "[first].[last]@lazy.com"
-				},
-				{
-					"name": "age",
-					"func": "<number(2)>"
-				},
-				{
-					"name": "salary",
-					"func": "<sign()><number(7)>.<number(2)>"
-				}
-			]
-		},
-		{
-			"name": "person_phones",
-			"output": "json",
-			"rows": 1000,
-			"columns": [
 				{
 					"name": "first_name",
 					"func": "[first]"
@@ -51,10 +28,9 @@
 				},
 				{
 					"name": "salary",
-					"func": "<number(7)>.<number(2)>"
+					"func": "<money()>"
 				}
 			]
 		}
-
 	]
 }

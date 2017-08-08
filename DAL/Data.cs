@@ -42,7 +42,7 @@ namespace DemoData
 				Convert.ToString(
 					_Random.Next(
 						Convert.ToInt32( "1".PadRight( MinLength, '0' ) ),
-						Convert.ToInt32( "1".PadRight( MaxLength, '0' ) )
+						Convert.ToInt32( "1".PadRight( MaxLength + 1, '0' ) )
 					)
 				)
 			);
@@ -135,11 +135,7 @@ namespace DemoData
 			int nMonth = _Random.Next( 1, 13 );
 			int nDay = _Random.Next( 1, DateTime.DaysInMonth( nYear, nMonth ) + 1 );
 
-			DateTime oDate = new DateTime(
-				nYear,
-				nMonth,
-				nDay
-			);
+			DateTime oDate = new DateTime( nYear, nMonth, nDay );
 
 			return ( oDate.ToString( _CultureInfo.DateTimeFormat.ShortDatePattern ) );
 		}

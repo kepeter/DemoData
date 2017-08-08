@@ -74,9 +74,14 @@ namespace DemoData
 					oMatch = oMatch.NextMatch( );
 				}
 
-				string szResult = string.Format( "return( string.Format( \"{0}\", {1} ) );", szFinalFormat, string.Join( ", ", oFunc.ToArray( ) ) );
+				string szResult = string.Format( "return( \"{0}\" );", szFinalFormat );
 
-				oCode.AppendLine( string.Format( "public dynamic {0} () {{", Helpers.TextInfo.ToTitleCase( oCustomFunction.Name ) ) );
+				if ( nIndex > 0 )
+				{
+					szResult = string.Format( "return( string.Format( \"{0}\", {1} ) );", szFinalFormat, string.Join( ", ", oFunc.ToArray( ) ) );
+				}
+
+				oCode.AppendLine( string.Format( "public static dynamic {0} () {{", Helpers.TextInfo.ToTitleCase( oCustomFunction.Name ) ) );
 				oCode.AppendLine( szResult );
 				oCode.AppendLine( "}" );
 			}

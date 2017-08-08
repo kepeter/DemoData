@@ -2,6 +2,10 @@
 	"inherit": "",
 	"local": [
 		{
+			"name": "fixed",
+			"func": "value"
+		},
+		{
 			"name": "phone",
 			"func": "<number(3)>-<number(7)>"
 		},
@@ -11,11 +15,11 @@
 		},
 		{
 			"name": "mail",
-			"func": "[first]@dummy.com",
+			"func": "[first]@dummy.com"
 		},
 		{
 			"name": "money",
-			"func": "<number(2,5)>.<number(2)>"
+			"func": "<sign()><number(2,5)>.<number(2)>"
 		}
 	]
 }

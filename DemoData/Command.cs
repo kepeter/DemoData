@@ -114,9 +114,13 @@ namespace DemoData
 						oMatch = oMatch.NextMatch( );
 					}
 
-					if ( szFinalFormat.Contains( '{' ) )
+					if ( nIndex > 0 )
 					{
 						oLines.Add( string.Format( "{{\"{0}\", string.Format(\"{1}\", {2})}},", Helpers.TextInfo.ToTitleCase( oColumn.Name ), szFinalFormat, string.Join( ", ", oFunc.ToArray( ) ) ) );
+					}
+					else
+					{
+						oLines.Add( string.Format( "{{\"{0}\", \"{1}\"}},", Helpers.TextInfo.ToTitleCase( oColumn.Name ), szFinalFormat ) );
 					}
 				}
 
