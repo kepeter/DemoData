@@ -24,7 +24,7 @@
 				},
 				{
 					"name": "salary",
-					"func": "<number(7)>.<number(2)>"
+					"func": "<sign()><number(7)>.<number(2)>"
 				}
 			]
 		},

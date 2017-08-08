@@ -25,7 +25,7 @@ namespace DemoData
 			public static string Command = "-cmd";
 		}
 
-		public static string Root = Path.GetDirectoryName( System.Reflection.Assembly.GetEntryAssembly( ).Location );
+		public static string Root = Path.GetDirectoryName( Assembly.GetEntryAssembly( ).Location );
 		public static string CultureRoot = string.Format( @"{0}\Culture", Root );
 		public static string[ ] Cultures = Directory.GetDirectories( Helpers.CultureRoot );
 
