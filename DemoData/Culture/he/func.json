@@ -1,21 +1,25 @@
 ﻿{
+	"inherit": "",
 	"local": [
 		{
+			"name": "name",
+			"func": "[first] [last]"
+		},
+		{
+			"name": "address",
+			"func": "<number(3)> [street]"
+		},
+		{
 			"name": "phone",
-			"func": [ "{number(3)}-{number(4)}" ]
+			"func": "<number(3)>-<number(7)>"
 		},
 		{
-			"name": "firsname",
-			"func": [ "[first]" ]
+			"name": "email",
+			"func": "[first]@dummy.com"
 		},
 		{
-			"name": "mail",
-			"func": [ "[first]@dummy.com" ],
-			"case": "lower"
-		},
-		{
-			"name": "money",
-			"func": [ "{number(2,5)}.{number(2)}" ]
+			"name": "ballance",
+			"func": "<sign()><number(2,5)>.<number(2)>"
 		}
 	]
 }

@@ -70,12 +70,18 @@
     <None Include="culture\en\func.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="culture\en\street.json" />
+    <None Include="culture\fr\first.json" />
+    <None Include="culture\fr\func.json" />
+    <None Include="culture\fr\last.json" />
+    <None Include="culture\fr\street.json" />
     <None Include="culture\he\first.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="culture\he\func.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="culture\he\last.json" />
     <None Include="culture\he\street.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
