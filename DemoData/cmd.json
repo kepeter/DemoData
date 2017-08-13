@@ -1,10 +1,64 @@
 ﻿{
-	"compile": true,
+	"compile": false,
+	"output": "csv",
 	"tables": [
 		{
 			"name": "person",
-			"output": "csv",
 			"rows": 1000,
+			"childTables": [
+				{
+					"name": "email",
+					"rows": {
+						"from": 1,
+						"to": 1
+					},
+					"relations": [
+						{
+							"parent": "id",
+							"child": "person"
+						}
+					],
+					"columns": [
+						{
+							"name": "person"
+						},
+						{
+							"name": "id",
+							"func": "<sid()>"
+						},
+						{
+							"name": "email",
+							"function": "[first].[last]@lazy.com"
+						}
+					]
+				},
+				{
+					"name": "action",
+					"rows": {
+						"from": 0,
+						"to": 3
+					},
+					"relations": [
+						{
+							"parent": "id",
+							"child": "person"
+						}
+					],
+					"columns": [
+						{
+							"name": "person"
+						},
+						{
+							"name": "id",
+							"func": "<sid()>"
+						},
+						{
+							"name": "value",
+							"func": "<ballance()>"
+						}
+					]
+				}
+			],
 			"columns": [
 				{
 					"name": "id",
@@ -19,16 +73,8 @@
 					"func": "[last]"
 				},
 				{
-					"name": "email",
-					"func": "[first].[last]@lazy.com"
-				},
-				{
 					"name": "age",
 					"func": "<number(2)>"
-				},
-				{
-					"name": "ballance",
-					"func": "<money()>"
 				}
 			]
 		}

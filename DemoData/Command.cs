@@ -18,27 +18,49 @@ namespace DemoData
 #pragma warning disable CS0649
 		internal struct CommandList
 		{
+			public enum Format
+			{
+				CSV,
+				JSON,
+			}
+
+			public struct Column
+			{
+				public string Name;
+				public string Func;
+			}
+
+			public struct RowCount
+			{
+				public int From;
+				public int To;
+			}
+
+			public struct Relation
+			{
+				public string Parent;
+				public string Child;
+			}
+
+			public struct ChildTable
+			{
+				public string Name;
+				public RowCount Rows;
+				public Relation[ ] Relations;
+				public ChildTable[ ] ChildTables;
+				public Column[ ] Columns;
+			}
+
 			public struct Table
 			{
-				public enum Format
-				{
-					CSV,
-					JSON,
-				}
-
-				public struct Column
-				{
-					public string Name;
-					public string Func;
-				}
-
 				public string Name;
-				public Format Output;
 				public int Rows;
+				public ChildTable[ ] ChildTables;
 				public Column[ ] Columns;
 			}
 
 			public bool Compile;
+			public Format Output;
 			public Table[ ] Tables;
 		}
 #pragma warning restore CS0649
@@ -134,7 +156,7 @@ namespace DemoData
 				oCode.AppendLine( "private JObject Record() {" );
 				oCode.AppendLine( "Next();" );
 
-				string szResultPath = string.Format( @"{0}\results\{1}.{2}", Path.GetDirectoryName( System.Reflection.Assembly.GetEntryAssembly( ).Location ), oTable.Name, oTable.Output == Format.CSV ? "csv" : "json" );
+				string szResultPath = string.Format( @"{0}\results\{1}.{2}", Path.GetDirectoryName( System.Reflection.Assembly.GetEntryAssembly( ).Location ), oTable.Name, oCommand.Output == Format.CSV ? "csv" : "json" );
 
 				string szObject = string.Join( Environment.NewLine, oLines.ToArray( ) );
 				szObject = string.Format( "return( new JObject {{{0}}} );", szObject );
@@ -146,7 +168,7 @@ namespace DemoData
 				oCode.AppendLine( "public void WriteResult() {" );
 				oCode.AppendLine( string.Format( "Data{1}.Reset( \"{1}\" ); JObject[] oRecordSet = new JObject[{0}]; for (int i = 0; i < {0}; i++ ) {{ oRecordSet[i] = Record(); }} ", oTable.Rows, Culture ) );
 				oCode.AppendLine( string.Format( "Export.SetOutput(@\"{0}\");", szResultPath ) );
-				oCode.AppendLine( string.Format( "Export.To{0}(oRecordSet);", oTable.Output == Format.CSV ? "Csv" : "Json" ) );
+				oCode.AppendLine( string.Format( "Export.To{0}(oRecordSet);", oCommand.Output == Format.CSV ? "Csv" : "Json" ) );
 				oCode.AppendLine( "Export.RestoreOutput();" );
 				oCode.AppendLine( "}" );
 
