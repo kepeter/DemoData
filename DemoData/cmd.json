@@ -8,10 +8,7 @@
 			"childTables": [
 				{
 					"name": "email",
-					"rows": {
-						"from": 1,
-						"to": 1
-					},
+					"rows": 1,
 					"relations": [
 						{
 							"parent": "id",
@@ -20,7 +17,8 @@
 					],
 					"columns": [
 						{
-							"name": "person"
+							"name": "person",
+							"func": ""
 						},
 						{
 							"name": "id",
@@ -28,16 +26,13 @@
 						},
 						{
 							"name": "email",
-							"function": "[first].[last]@lazy.com"
+							"func": "<alpha(7,15)>@lazy.com"
 						}
 					]
 				},
 				{
 					"name": "action",
-					"rows": {
-						"from": 0,
-						"to": 3
-					},
+					"rows": 3,
 					"relations": [
 						{
 							"parent": "id",
@@ -46,7 +41,8 @@
 					],
 					"columns": [
 						{
-							"name": "person"
+							"name": "person",
+							"func": ""
 						},
 						{
 							"name": "id",
@@ -74,7 +70,7 @@
 				},
 				{
 					"name": "age",
-					"func": "<number(2)>"
+					"func": "<number(2,2)>"
 				}
 			]
 		}

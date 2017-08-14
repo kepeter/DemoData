@@ -9,7 +9,6 @@ using Microsoft.CSharp;
 using Newtonsoft.Json;
 
 using static DemoData.Command.CommandList;
-using static DemoData.Command.CommandList.Table;
 
 namespace DemoData
 {
@@ -30,32 +29,18 @@ namespace DemoData
 				public string Func;
 			}
 
-			public struct RowCount
-			{
-				public int From;
-				public int To;
-			}
-
 			public struct Relation
 			{
 				public string Parent;
 				public string Child;
 			}
 
-			public struct ChildTable
-			{
-				public string Name;
-				public RowCount Rows;
-				public Relation[ ] Relations;
-				public ChildTable[ ] ChildTables;
-				public Column[ ] Columns;
-			}
-
 			public struct Table
 			{
 				public string Name;
 				public int Rows;
-				public ChildTable[ ] ChildTables;
+				public Relation[ ] Relations;
+				public Table[ ] ChildTables;
 				public Column[ ] Columns;
 			}
 
@@ -65,9 +50,128 @@ namespace DemoData
 		}
 #pragma warning restore CS0649
 
+		private static void WriteTable ( Table Table, StringBuilder Code, List<string> TableName, string Culture )
+		{
+			Dictionary<string, string> oProperties = new Dictionary<string, string>( );
+			bool bNeedNext = false;
+
+			Code.AppendLine( string.Format( "public class {0} {{", Table.Name ) );
+			List<string> oLines = new List<string>( );
+
+			TableName.Add( Table.Name );
+
+			foreach ( Column oColumn in Table.Columns )
+			{
+				Relation[ ] oRelations = Table.Relations?.Where( oRelation => oRelation.Child == oColumn.Name ).ToArray( );
+
+				if ( oRelations?.Length == 1 )
+				{
+					oLines.Add( string.Format( "{{\"{0}\", Parent[\"{1}\"].Value<string>()}},", Helpers.TextInfo.ToTitleCase( oColumn.Name ), Helpers.TextInfo.ToTitleCase( oRelations[0].Parent ) ) );
+
+					continue;
+				}
+				else if ( oRelations?.Length > 1 )
+				{
+					Console.WriteLine( string.Format( "WARNING: More then one relation for the same column ({0}) in tabel ({1})! Ignored...", oColumn.Name, Table.Name ) );
+				}
+
+				List<string> oFunc = new List<string>( );
+				int nIndex = 0;
+
+				string szFinalFormat = oColumn.Func;
+
+				Match oMatch = Helpers.Resource.Match( oColumn.Func );
+
+				while ( oMatch.Success )
+				{
+					bNeedNext = true;
+
+					string szKey = Helpers.TextInfo.ToTitleCase( Helpers.Replace( Helpers.SquareToNothingRegex, Helpers.SquareToNothing, oMatch.Value ) );
+
+					if ( !oProperties.ContainsKey( szKey ) )
+					{
+						oProperties.Add( szKey, string.Format( "Resource({0})", Helpers.Replace( Helpers.SquareToQuoteRegex, Helpers.SquareToQuote, oMatch.Value ) ) );
+
+						Code.AppendLine( string.Format( "private static dynamic {0};", szKey ) );
+					}
+
+					oFunc.Add( szKey );
+
+					szFinalFormat = szFinalFormat.Replace( oMatch.Value, string.Format( "{{{0}}}", nIndex++ ) );
+
+					oMatch = oMatch.NextMatch( );
+				}
+
+				oMatch = Helpers.Function.Match( oColumn.Func );
+
+				while ( oMatch.Success )
+				{
+					oFunc.Add( string.Format( "Data{0}.{1}", Culture, Helpers.TextInfo.ToTitleCase( string.Format( "{0}", oMatch.Value.Replace( "<", "" ).Replace( ">", "" ) ) ) ) );
+
+					szFinalFormat = szFinalFormat.Replace( oMatch.Value, string.Format( "{{{0}}}", nIndex++ ) );
+
+					oMatch = oMatch.NextMatch( );
+				}
+
+				if ( nIndex > 0 )
+				{
+					oLines.Add( string.Format( "{{\"{0}\", string.Format(\"{1}\", {2})}},", Helpers.TextInfo.ToTitleCase( oColumn.Name ), szFinalFormat, string.Join( ", ", oFunc.ToArray( ) ) ) );
+				}
+				else
+				{
+					oLines.Add( string.Format( "{{\"{0}\", \"{1}\"}},", Helpers.TextInfo.ToTitleCase( oColumn.Name ), szFinalFormat ) );
+				}
+			}
+
+			if ( bNeedNext )
+			{
+				Code.AppendLine( "private static void Next() {" );
+				foreach ( KeyValuePair<string, string> oProperty in oProperties )
+				{
+					Code.AppendLine( string.Format( "{0} = Data{1}.{2};", oProperty.Key, Culture, oProperty.Value ) );
+				}
+				Code.AppendLine( "}" );
+			}
+
+			Code.AppendLine( "private static JObject Record( JObject Parent = null ) {" );
+			if ( bNeedNext )
+			{
+				Code.AppendLine( "Next();" );
+			}
+
+			string szObject = string.Join( Environment.NewLine, oLines.ToArray( ) );
+			szObject = string.Format( "return( new JObject {{{0}}} );", szObject );
+
+			Code.AppendLine( szObject );
+
+			Code.AppendLine( "}" );
+
+			Code.AppendLine( "public static void LoadData ( Dictionary<string, Stack> Storage, JObject Parent = null ) {" );
+			Code.AppendLine( "Data.PushSID();" );
+			Code.AppendLine( string.Format( "for (int i = 0; i < {0}; i++ ) {{", Table.Rows ) );
+			Code.AppendLine( string.Format( "Storage[\"{0}\"].Push( Record( Parent ) );", Table.Name ) );
+
+			foreach ( Table oChild in Table.ChildTables ?? Enumerable.Empty<Table>( ) )
+			{
+				Code.AppendLine( string.Format( "{0}.LoadData( Storage, ( JObject )Storage[\"{1}\"].Peek( ) );", oChild.Name, Table.Name ) );
+			}
+
+			Code.AppendLine( "}" );
+			Code.AppendLine( "Data.PopSID();" );
+			Code.AppendLine( "}" );
+
+			Code.AppendLine( "}" );
+
+			foreach ( Table oChild in Table.ChildTables ?? Enumerable.Empty<Table>( ) )
+			{
+				WriteTable( oChild, Code, TableName, Culture );
+			}
+		}
+
 		public static bool Execute ( string CommandFile, string Culture )
 		{
 			StringBuilder oCode = new StringBuilder( );
+			List<string> oTableNames = new List<string>( );
 			string szFile = string.Format( @"{0}\{1}", Helpers.Root, CommandFile );
 
 			if ( !File.Exists( szFile ) )
@@ -88,100 +192,39 @@ namespace DemoData
 				}
 			}
 
+			oCode.AppendLine( "using System;" );
+			oCode.AppendLine( "using System.Collections;" );
+			oCode.AppendLine( "using System.Collections.Generic;" );
 			oCode.AppendLine( "using Newtonsoft.Json.Linq;" );
+
 			oCode.AppendLine( "namespace DemoData {" );
 
 			foreach ( Table oTable in oCommand.Tables )
 			{
-				Dictionary<string, string> oProperties = new Dictionary<string, string>( );
-
-				oCode.AppendLine( string.Format( "public class {0} {{", oTable.Name ) );
-				List<string> oLines = new List<string>( );
-
-				foreach ( Column oColumn in oTable.Columns )
-				{
-					List<string> oFunc = new List<string>( );
-					int nIndex = 0;
-
-					string szFinalFormat = oColumn.Func;
-
-					Match oMatch = Helpers.Resource.Match( oColumn.Func );
-
-					while ( oMatch.Success )
-					{
-						string szKey = Helpers.TextInfo.ToTitleCase( Helpers.Replace( Helpers.SquareToNothingRegex, Helpers.SquareToNothing, oMatch.Value ) );
-
-						if ( !oProperties.ContainsKey( szKey ) )
-						{
-							oProperties.Add( szKey, string.Format( "Resource({0})", Helpers.Replace( Helpers.SquareToQuoteRegex, Helpers.SquareToQuote, oMatch.Value ) ) );
-
-							oCode.AppendLine( string.Format( "dynamic {0};", szKey ) );
-						}
-
-						oFunc.Add( szKey );
-
-						szFinalFormat = szFinalFormat.Replace( oMatch.Value, string.Format( "{{{0}}}", nIndex++ ) );
-
-						oMatch = oMatch.NextMatch( );
-					}
-
-					oMatch = Helpers.Function.Match( oColumn.Func );
-
-					while ( oMatch.Success )
-					{
-						oFunc.Add( string.Format( "Data{0}.{1}", Culture, Helpers.TextInfo.ToTitleCase( string.Format( "{0}", oMatch.Value.Replace( "<", "" ).Replace( ">", "" ) ) ) ) );
-
-						szFinalFormat = szFinalFormat.Replace( oMatch.Value, string.Format( "{{{0}}}", nIndex++ ) );
-
-						oMatch = oMatch.NextMatch( );
-					}
-
-					if ( nIndex > 0 )
-					{
-						oLines.Add( string.Format( "{{\"{0}\", string.Format(\"{1}\", {2})}},", Helpers.TextInfo.ToTitleCase( oColumn.Name ), szFinalFormat, string.Join( ", ", oFunc.ToArray( ) ) ) );
-					}
-					else
-					{
-						oLines.Add( string.Format( "{{\"{0}\", \"{1}\"}},", Helpers.TextInfo.ToTitleCase( oColumn.Name ), szFinalFormat ) );
-					}
-				}
-
-				oCode.AppendLine( "void Next() {" );
-				foreach ( KeyValuePair<string, string> oProperty in oProperties )
-				{
-					oCode.AppendLine( string.Format( "{0} = Data{1}.{2};", oProperty.Key, Culture, oProperty.Value ) );
-				}
-				oCode.AppendLine( "}" );
-
-				oCode.AppendLine( "private JObject Record() {" );
-				oCode.AppendLine( "Next();" );
-
-				string szResultPath = string.Format( @"{0}\results\{1}.{2}", Path.GetDirectoryName( System.Reflection.Assembly.GetEntryAssembly( ).Location ), oTable.Name, oCommand.Output == Format.CSV ? "csv" : "json" );
-
-				string szObject = string.Join( Environment.NewLine, oLines.ToArray( ) );
-				szObject = string.Format( "return( new JObject {{{0}}} );", szObject );
-
-				oCode.AppendLine( szObject );
-
-				oCode.AppendLine( "}" );
-
-				oCode.AppendLine( "public void WriteResult() {" );
-				oCode.AppendLine( string.Format( "Data{1}.Reset( \"{1}\" ); JObject[] oRecordSet = new JObject[{0}]; for (int i = 0; i < {0}; i++ ) {{ oRecordSet[i] = Record(); }} ", oTable.Rows, Culture ) );
-				oCode.AppendLine( string.Format( "Export.SetOutput(@\"{0}\");", szResultPath ) );
-				oCode.AppendLine( string.Format( "Export.To{0}(oRecordSet);", oCommand.Output == Format.CSV ? "Csv" : "Json" ) );
-				oCode.AppendLine( "Export.RestoreOutput();" );
-				oCode.AppendLine( "}" );
-
-				oCode.AppendLine( "}" );
+				WriteTable( oTable, oCode, oTableNames, Culture );
 			}
 
 			oCode.AppendLine( "public class Execute {" );
 			oCode.AppendLine( "public static void Run() {" );
 
+			oCode.AppendLine( "Dictionary<string, Stack> oStorage = new Dictionary<string, Stack>( );" );
+			oCode.AppendLine( string.Format( "Data.Reset( \"{0}\" );", Culture ) );
+
+			foreach ( string szTable in oTableNames )
+			{
+				oCode.AppendLine( string.Format( "oStorage.Add( \"{0}\", new Stack( ) );", szTable ) );
+			}
+
 			foreach ( Table oTable in oCommand.Tables )
 			{
-				oCode.AppendLine( string.Format( "{0} o{0} = new {0}( ); o{0}.WriteResult( );", oTable.Name ) );
+				oCode.AppendLine( string.Format( "{0}.LoadData( oStorage );", oTable.Name ) );
 			}
+
+			oCode.AppendLine( "foreach ( KeyValuePair<string, Stack> oTable in oStorage ) {" );
+			oCode.AppendLine( string.Format( "Export.SetOutput( string.Format( @\"C:\\Users\\peter\\Source\\Repos\\demodata\\DemoData\\bin\\Debug\\results\\{{0}}.{0}\", oTable.Key ) );", oCommand.Output ) );
+			oCode.AppendLine( "Export.ToCsv(Array.ConvertAll(oTable.Value.ToArray(), oItem => (JObject)oItem));" );
+			oCode.AppendLine( "Export.RestoreOutput( );" );
+			oCode.AppendLine( "}" );
 
 			oCode.AppendLine( "}" );
 			oCode.AppendLine( "}" );

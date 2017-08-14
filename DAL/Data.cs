@@ -12,6 +12,7 @@ namespace DemoData
 		private static Random _Random = new Random( );
 		private static CultureInfo _CultureInfo;
 		private static int _SID = 0;
+		private static Stack<int> _SIDStack = new Stack<int>( );
 		private static string _BaseName = string.Format( @"{0}\culture\{{0}}\{{1}}.json", Path.GetDirectoryName( System.Reflection.Assembly.GetEntryAssembly( ).Location ) );
 		private static string _MissingResource = "###There is no resource '{0}' in culture '{1}'!";
 		private static Dictionary<string, Dictionary<string, string[ ]>> _Resources = new Dictionary<string, Dictionary<string, string[ ]>>( );
@@ -21,6 +22,17 @@ namespace DemoData
 			_CultureInfo = string.IsNullOrEmpty( Culture ) ? CultureInfo.GetCultureInfo( "en" ) : CultureInfo.GetCultureInfo( Culture );
 
 			_SID = 0;
+		}
+
+		public static void PushSID ( )
+		{
+			_SIDStack.Push( _SID );
+			_SID = 0;
+		}
+
+		public static void PopSID ( )
+		{
+			_SID = _SIDStack.Pop( );
 		}
 
 		#region Pure randoms

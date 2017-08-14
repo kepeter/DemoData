@@ -11,7 +11,6 @@ namespace DemoData
 	{
 		static void Main ( string[ ] args )
 		{
-			Execute.Run( );
 			List<string> oArgs = args.ToList( );
 			int nIndex;
 
