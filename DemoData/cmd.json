@@ -9,6 +9,40 @@
 				{
 					"name": "email",
 					"rows": 1,
+					"childTables": [
+						{
+							"name": "messages",
+							"rows": 7,
+							"relations": [
+								{
+									"parent": "person",
+									"child": "person"
+								},
+								{
+									"parent": "id",
+									"child": "email"
+								}
+							],
+							"columns": [
+								{
+									"name": "person",
+									"func": ""
+								},
+								{
+									"name": "email",
+									"func": ""
+								},
+								{
+									"name": "id",
+									"func": "<sid()>"
+								},
+								{
+									"name": "content",
+									"func": "<alpha(4,12)>"
+								}
+							]
+						}
+					],
 					"relations": [
 						{
 							"parent": "id",
