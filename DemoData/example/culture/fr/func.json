@@ -11,14 +11,14 @@
 		},
 		{
 			"name": "phone",
-			"func": "<number(3)>-<number(7)>"
+			"func": "0<range(1,9)>-<number(2)>-<number(2)>-<number(2)>-<number(2)>"
 		},
 		{
 			"name": "email",
 			"func": "[first]@dummy.com"
 		},
 		{
-			"name": "ballance",
+			"name": "balance",
 			"func": "<sign()><number(2,5)>.<number(2)>"
 		}
 	]

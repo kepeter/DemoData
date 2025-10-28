@@ -3,7 +3,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <OutputType>Library</OutputType>
         <RootNamespace>DemoData</RootNamespace>
-        <AssemblyTitle>Export</AssemblyTitle>
+        <AssemblyTitle>Data</AssemblyTitle>
         <AssemblyVersion>2.0.0.0</AssemblyVersion>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>

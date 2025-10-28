@@ -1,131 +1,73 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// -----------------------------------------------------------------------
+// <copyright>
+// Copyright (c) Peter Eliyahu Kornfeld. All rights reserved.
+// </copyright>
+//
+// <license>
+// Licensed under the MIT license.
+// See LICENSE file in the project root for full license information.
+// </license>
+// -----------------------------------------------------------------------
+namespace DemoData;
+
+using System.CommandLine;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
 
-namespace DemoData
+/// <summary>
+/// The main program class for the DemoData application.
+/// </summary>
+internal partial class Program
 {
-	class Program
-	{
-		static void Main ( string[ ] args )
-		{
-			List<string> oArgs = args.ToList( );
-			int nIndex;
+    /// <summary>
+    /// The main entry point for the application.
+    /// </summary>
+    /// <param name="args">The command-line arguments.</param>
+    /// <returns>An integer exit code.</returns>
+    private static int Main(string[] args)
+    {
+        Directory.CreateDirectory(cultureRoot);
 
-			PrintHeader( );
+        PrintHeader();
 
-			if ( ( oArgs.Count( ) == 0 ) ||
-				( !oArgs.Contains( Helpers.Commands.List ) &&
-				  !oArgs.Contains( Helpers.Commands.Compile ) &&
-				  !oArgs.Contains( Helpers.Commands.Command ) ) )
-			{
-				PrintHelp( );
+        if (args.Length == 0)
+        {
+            args = ["--help"];
+        }
 
-				return;
-			}
+        RootCommand rootCommand = new RootCommand("Generates pseudo-random relational data for testing purposes.") { };
 
-			if ( oArgs.Contains( Helpers.Commands.List ) )
-			{
-				Console.WriteLine( "Listing cultures..." );
+        Command listCommand = new Command("list", "List cultures and their resources.")
+        {
+            Options = { new Option<string>("--culture") { Description = "The culture to use. If not specified, all cultures will be listed.", Required = false } },
+        };
 
-				if ( Helpers.Cultures.Length > 0 )
-				{
-					foreach ( string szCulture in Helpers.Cultures )
-					{
-						DirectoryInfo oDir = new DirectoryInfo( szCulture );
+        Command compileCommand = new Command("compile", $"Compile the specified culture's functions (as defined in {functionFile}).")
+        {
+            Options = { new Option<string>("--culture") { Description = "The culture to use.", Required = true } },
+        };
 
-						Console.WriteLine( );
-						Console.WriteLine( string.Format( "  {0}", oDir.Name ) );
-						Console.WriteLine( string.Format( "    Functions definitions file is {0}...", File.Exists( Path.Combine( oDir.FullName, "func.json" ) ) ? "presented" : "missing" ) );
-						Console.WriteLine( "    Resources:" );
+        Command executeCommand = new Command("execute", "Execute the specified command file.")
+        {
+            Options =
+            {
+                { new Option<string>("--file") { Description = "The command file to execute.", Required = true } },
+                { new Option<string>("--culture") { Description = "The culture to use. If not specified, the culture from the command file will be used. If no culture specified in the command file the current culture of the running environment will be used.", Required = false } },
+                { new Option<string>("--target") { Description = "The target folder to store output to. If not specified, the Name defined in the command file will be used. If no Name is specified in the command file, the file name will be used.", Required = false } },
+                { new Option<bool>("--compile") { Description = "If set, the selected culture's functions will be compiled before execution. If not specified, the behavior defined in the command file will be used.", Required = false } },
+                { new Option<Format>("--format") { Description = "The output format to use. If not specified, the format from the command file will be used. If no format is specified in the command file, CSV format will be used.", Required = false } },
+            },
+        };
 
-						foreach ( FileInfo oFile in oDir.GetFiles( ) )
-						{
-							if ( !oFile.Name.ToLower( ).Equals( "func.json" ) )
-							{
-								Console.WriteLine( string.Format( "      {0}", oFile.Name.Replace( oFile.Extension, string.Empty ) ) );
-							}
-						}
-					}
-				}
-				else
-				{
-					Console.WriteLine( "  ...none found..." );
-				}
-			}
+        listCommand.SetAction(List);
+        compileCommand.SetAction(Compile);
+        executeCommand.SetAction(Execute);
 
-			if ( oArgs.Contains( Helpers.Commands.Compile ) )
-			{
-				nIndex = oArgs.IndexOf( Helpers.Commands.Compile ) + 1;
+        rootCommand.Subcommands.Add(listCommand);
+        rootCommand.Subcommands.Add(compileCommand);
+        rootCommand.Subcommands.Add(executeCommand);
 
-				if ( oArgs.Count > nIndex )
-				{
-					string szCulture = oArgs[nIndex];
+        ParseResult parseResult = rootCommand.Parse(args);
 
-					Console.WriteLine( );
-					Console.WriteLine( string.Format( "Compiling culture '{0}'...", szCulture ) );
-
-					if ( !Compiler.Compile( szCulture ) )
-					{
-						return;
-					}
-				}
-				else
-				{
-					Console.WriteLine( "ERROR. Missing culture..." );
-
-					return;
-				}
-			}
-
-			if ( oArgs.Contains( Helpers.Commands.Command ) )
-			{
-				nIndex = oArgs.IndexOf( Helpers.Commands.Command ) + 2;
-
-				if ( oArgs.Count > nIndex )
-				{
-					string szCommandFile = oArgs[nIndex - 1];
-					string szCulture = oArgs[nIndex];
-
-					Console.WriteLine( string.Format( "Executing command from '{0}', using culture '{1}'...", szCommandFile, szCulture ) );
-
-					if ( !Command.Execute( szCommandFile, szCulture ) )
-					{
-						return;
-					}
-				}
-				else
-				{
-					Console.WriteLine( "ERROR. Missing command file and/or culture..." );
-
-					return;
-				}
-			}
-		}
-
-		static void PrintHeader ( )
-		{
-			Console.WriteLine( "DemoData" );
-			Console.WriteLine( string.Format( "  Version: {0}", Assembly.GetEntryAssembly( ).GetName( ).Version.ToString( ) ) );
-
-			Console.WriteLine( );
-		}
-
-		static void PrintHelp ( )
-		{
-			Console.WriteLine( "USAGE:" );
-			Console.WriteLine( "  DemoData -list | -comp {culture} | -cmd {file} {culture}" );
-			Console.WriteLine( );
-			Console.WriteLine( "Where:" );
-			Console.WriteLine( "  -list                  Lists all the cultures currently exists," );
-			Console.WriteLine( "                         including their resources" );
-			Console.WriteLine( "  -comp {culture}        Compiles the specified 'culture'" );
-			Console.WriteLine( "  -cmd {file} {culture}  Runs the commands in 'file' using 'culture'" );
-
-			Console.WriteLine( );
-			Console.WriteLine( "Details: https://www.codeproject.com/Articles/1198666/Demo-data" );
-		}
-	}
+        return parseResult.Invoke();
+    }
 }

@@ -18,7 +18,7 @@
 			"func": "[first]@dummy.com"
 		},
 		{
-			"name": "ballance",
+			"name": "balance",
 			"func": "<sign()><number(2,5)>.<number(2)>"
 		}
 	]

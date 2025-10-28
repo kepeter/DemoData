@@ -1,54 +1,86 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright>
+// Copyright (c) Peter Eliyahu Kornfeld. All rights reserved.
+// </copyright>
+//
+// <license>
+// Licensed under the MIT license.
+// See LICENSE file in the project root for full license information.
+// </license>
+// -----------------------------------------------------------------------
+namespace DemoData;
+
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
-namespace DemoData
+/// <summary>
+/// Export functionality.
+/// 
+///     This class provides methods to export data in various formats.
+/// </summary>
+public class Export
 {
-	public class Export
-	{
-		private static TextWriter _StandardOutput = Console.Out;
+    /// <summary>
+    /// Exports the given set of JsonObjects to a JSON file at the specified target path.
+    /// </summary>
+    /// <param name="Set">The set of JsonObjects to export.</param>
+    /// <param name="Target">The target file path.</param>
+    public static void ToJson(List<JsonObject> Set, string Target)
+    {
+        TextWriter writer = EnsureTarget(Target);
 
-		public static void SetOutput ( string Out )
-		{
-			Directory.CreateDirectory( Path.GetDirectoryName( Out ) );
+        writer.WriteLine(JsonSerializer.Serialize(Set));
+        writer.Flush();
+        writer.Close();
+    }
 
-			Console.Out.Flush( );
-			Console.SetOut( new StreamWriter( Out ) );
-		}
+    /// <summary>
+    /// Exports the given set of JsonObjects to a CSV file at the specified target path.
+    /// </summary>
+    /// <param name="Set">The set of JsonObjects to export.</param>
+    /// <param name="Target">The target file path.</param>
+    public static void ToCsv(List<JsonObject> Set, string Target)
+    {
+        TextWriter writer = EnsureTarget(Target);
+        StringBuilder oSB = new StringBuilder();
+        IEnumerable<string> szColumns = new List<string>(Set[0].Select(oCol => oCol.Key));
 
-		public static void RestoreOutput ( )
-		{
-			Console.Out.Flush( );
-			Console.SetOut( _StandardOutput );
-		}
+        oSB.AppendLine(string.Join(",", szColumns));
 
-		public static void ToJson ( JObject[ ] Set )
-		{
-			Console.WriteLine( JsonConvert.SerializeObject( Set ) );
-		}
+        foreach (JsonObject oRow in Set)
+        {
+            IEnumerable<string> szValues = oRow.Select(oCol => string.Format("\"{0}\"", oCol.Value.ToString().Replace("\"", "\"\"")));
 
-		public static void ToCsv ( JObject[ ] Set )
-		{
-			StringBuilder oSB = new StringBuilder( );
-			DataTable oData = JsonConvert.DeserializeObject<DataTable>( JsonConvert.SerializeObject( Set ) );
+            oSB.AppendLine(string.Join(",", szValues));
+        }
 
-			IEnumerable<string> szColumns = oData.Columns.Cast<DataColumn>( ).Select( oColumn => oColumn.ColumnName );
+        writer.WriteLine(oSB.ToString());
+        writer.Flush();
+        writer.Close();
+    }
 
-			oSB.AppendLine( string.Join( ",", szColumns ) );
+    /// <summary>
+    /// Ensures that the target file path exists and returns a TextWriter for it.
+    /// </summary>
+    /// <param name="Target">The target file path.</param>
+    /// <returns>A TextWriter for the target file path.</returns>
+    private static TextWriter EnsureTarget(string Target)
+    {
+        string directoryPath = Path.GetDirectoryName(Target);
 
-			foreach ( DataRow oRow in oData.Rows )
-			{
-				IEnumerable<string> szValues = oRow.ItemArray.Select( szValue => string.Format( "\"{0}\"", szValue.ToString( ) ) );
+        TextWriter writer;
 
-				oSB.AppendLine( string.Join( ",", szValues ) );
-			}
+        if (!Directory.Exists(directoryPath))
+        {
+            Directory.CreateDirectory(directoryPath);
+        }
 
-			Console.WriteLine( oSB.ToString( ) );
-		}
-	}
+        writer = new StreamWriter(Target, false, Encoding.UTF8);
+
+        return writer;
+    }
 }

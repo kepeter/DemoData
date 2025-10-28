@@ -1,10 +1,11 @@
 ﻿{
+    "name": "Test Command File",
 	"compile": false,
 	"output": "csv",
 	"tables": [
 		{
 			"name": "person",
-			"rows": 1000,
+			"rows": 100,
 			"childTables": [
 				{
 					"name": "email",
@@ -12,7 +13,7 @@
 					"childTables": [
 						{
 							"name": "messages",
-							"rows": 7,
+							"rows": 5,
 							"relations": [
 								{
 									"parent": "person",
@@ -84,7 +85,7 @@
 						},
 						{
 							"name": "value",
-							"func": "<ballance()>"
+							"func": "<balance()>"
 						}
 					]
 				}
@@ -101,6 +102,10 @@
 				{
 					"name": "last_name",
 					"func": "[last]"
+				},
+				{
+					"name": "phone",
+					"func": "<phone()>"
 				},
 				{
 					"name": "age",
