@@ -205,6 +205,36 @@ public class Terminal
     }
 
     /// <summary>
+    /// Gets the current foreground color.
+    /// </summary>
+    public ConsoleColor ForegroundColor
+    {
+        get
+        {
+            return Console.ForegroundColor;
+        }
+        set 
+        {
+            Console.ForegroundColor = value;
+        }
+    }
+
+    /// <summary>
+    /// Gets the current background color.
+    /// </summary>
+    public ConsoleColor BackgroundColor
+    {
+        get
+        {
+            return Console.BackgroundColor;
+        }
+        set
+        {
+            Console.BackgroundColor = value;
+        }
+    }
+
+    /// <summary>
     /// Clear the console screen.
     /// </summary>
     /// <returns>The current Terminal instance.</returns>

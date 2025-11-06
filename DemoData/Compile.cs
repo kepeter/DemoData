@@ -151,7 +151,7 @@ internal partial class Program
                 {
                     assemblyFile.Seek(0, SeekOrigin.Begin);
 
-                    using (FileStream fileStream = File.Create(compilation.AssemblyName))
+                    using (FileStream fileStream = File.Create(Path.Combine(binRoot, compilation.AssemblyName)))
                     {
                         assemblyFile.CopyTo(fileStream);
                     }

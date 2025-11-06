@@ -4,12 +4,18 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>DemoData</RootNamespace>
     <AssemblyTitle>DemoData</AssemblyTitle>
-    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <AssemblyVersion>2.1.0.0</AssemblyVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta7.25380.108" />
     <PackageReference Include="Microsoft.CodeAnalysis" Version="4.14.0" />
+    <PackageReference Include="Terminal.Gui" Version="1.19.0" />
+  </ItemGroup>
+  <ItemGroup>
+        <EmbeddedResource Include="Templates\resource.json" LogicalName="resourceTemplate"></EmbeddedResource>
+        <EmbeddedResource Include="Templates\function.json" LogicalName="functionTemplate"></EmbeddedResource>
+        <EmbeddedResource Include="Templates\command.json" LogicalName="commandTemplate"></EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Data\Data.csproj" />

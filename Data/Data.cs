@@ -39,40 +39,6 @@ public class Data
     private static int localSid = 0;
 
     /// <summary>
-    /// Resets the data generator to its initial state.
-    /// If a culture is provided, it sets the culture for data generation; otherwise, it defaults to English ("en").
-    /// This method also resets the sequential ID (SID) counter to zero.
-    /// </summary>
-    /// <param name="culture">The culture name to use for localization. If null or empty, defaults to "en".</param>
-    public static void Reset(string culture)
-    {
-        cultureInfo = string.IsNullOrEmpty(culture) ? CultureInfo.CurrentCulture : CultureInfo.GetCultureInfo(culture);
-
-        localSid = 0;
-    }
-
-    /// <summary>
-    /// Pushes the current SID onto a stack and resets the SID to zero.
-    /// This allows for nested SID sequences, where you can save the current state,
-    /// start a new sequence, and later restore the previous state by popping the stack.
-    /// </summary>
-    public static void PushSID()
-    {
-        sidStack.Push(localSid);
-
-        localSid = 0;
-    }
-
-    /// <summary>
-    /// Pops the last SID from the stack and restores it as the current SID.
-    /// This method should be called after a corresponding PushSID() call to restore the previous SID state.
-    /// </summary>
-    public static void PopSID()
-    {
-        localSid = sidStack.Pop();
-    }
-
-    /// <summary>
     /// Generates a random sign, either '+' or '-'.
     /// </summary>
     /// <returns>A char representing the sign.</returns>
@@ -263,13 +229,47 @@ public class Data
     }
 
     /// <summary>
+    /// Resets the data generator to its initial state.
+    /// If a culture is provided, it sets the culture for data generation; otherwise, it defaults to English ("en").
+    /// This method also resets the sequential ID (SID) counter to zero.
+    /// </summary>
+    /// <param name="culture">The culture name to use for localization. If null or empty, defaults to "en".</param>
+    protected static void Reset(string culture)
+    {
+        cultureInfo = string.IsNullOrEmpty(culture) ? CultureInfo.CurrentCulture : CultureInfo.GetCultureInfo(culture);
+
+        localSid = 0;
+    }
+
+    /// <summary>
+    /// Pushes the current SID onto a stack and resets the SID to zero.
+    /// This allows for nested SID sequences, where you can save the current state,
+    /// start a new sequence, and later restore the previous state by popping the stack.
+    /// </summary>
+    protected static void PushSID()
+    {
+        sidStack.Push(localSid);
+
+        localSid = 0;
+    }
+
+    /// <summary>
+    /// Pops the last SID from the stack and restores it as the current SID.
+    /// This method should be called after a corresponding PushSID() call to restore the previous SID state.
+    /// </summary>
+    protected static void PopSID()
+    {
+        localSid = sidStack.Pop();
+    }
+
+    /// <summary>
     /// Retrieves a random resource string from a JSON file based on the current culture.
     /// The resource files are expected to be located in a "culture" directory, with subdirectories for each culture.
     /// If the resource or culture file does not exist, a missing resource message is returned.
     /// </summary>
     /// <param name="name">The name of the resource to retrieve.</param>
     /// <returns>A string representing the retrieved resource.</returns>
-    public static string Resource(string name)
+    protected static string Resource(string name)
     {
         if (LoadResource(name))
         {
