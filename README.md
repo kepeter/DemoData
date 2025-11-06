@@ -100,6 +100,12 @@ The row count in child tables tells how many rows to create for **each** parent 
 * **Sid** - a sequential number starting at 1 and incrementing on each call by 1
 * **Resource(name)** - a random value form the named resource
 
+## Editor
+Each file type (resource, function and command) can be edited with a simple terminal based editor (using Terminal.Gui). 
+* The content will be validated before saving
+* New files for new or existing cultures can be created using the editor
+* When fitting list of resources and functions will be provided (Intellisense-like)
+
 ## Contributing
 
 Contributions are welcome! Please open issues or submit pull requests.

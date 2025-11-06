@@ -29,6 +29,7 @@ internal partial class Program
 
     private static readonly string commandRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "DemoData");
     private static readonly string cultureRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "DemoData", "culture");
+    private static readonly string binRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "DemoData", "bin");
 
     private static readonly string functionFile = "func.json";
 
@@ -52,6 +53,13 @@ internal partial class Program
     {
         CSV,
         JSON
+    }
+
+    private enum EditType
+    {
+        Resource,
+        Function,
+        Command
     }
 
     /// <summary>

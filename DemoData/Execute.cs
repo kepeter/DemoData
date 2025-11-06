@@ -123,7 +123,7 @@ internal partial class Program
                 WriteTable(table, execCode, tableNames, culture);
             }
 
-            execCode.AppendLine("public class Execute {");
+            execCode.AppendLine("public class Execute : Data {");
             execCode.AppendLine("public static void Run() {");
 
             execCode.AppendLine("Dictionary<string, Stack<JsonObject>> storage = new Dictionary<string, Stack<JsonObject>>( );");
@@ -177,7 +177,7 @@ internal partial class Program
                     MetadataReference.CreateFromFile(Path.Combine(runtimeDir, "System.Text.Json.dll")),
                     MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
                     MetadataReference.CreateFromFile("Data.dll"),
-                    MetadataReference.CreateFromFile($"Data{culture.ToUpper()}.dll"),
+                    MetadataReference.CreateFromFile(Path.Combine(binRoot, $"Data{culture.ToUpper()}.dll")),
                     MetadataReference.CreateFromFile("Export.dll")
                 ]);
 
@@ -218,7 +218,7 @@ internal partial class Program
 
     private static Assembly AppDomain_AssemblyResolve(object sender, ResolveEventArgs args)
     {
-        string assemblyPath = Path.Combine(".", new AssemblyName(args.Name).Name);
+        string assemblyPath = Path.Combine(binRoot, new AssemblyName(args.Name).Name);
 
         if (File.Exists(assemblyPath))
         {
@@ -233,7 +233,7 @@ internal partial class Program
         Dictionary<string, string> properties = new Dictionary<string, string>();
         bool needNext = false;
 
-        code.AppendLine($"public class {table.Name} {{");
+        code.AppendLine($"public class {table.Name} : Data {{");
         List<string> lines = new List<string>();
 
         tableName.Add(table.Name);

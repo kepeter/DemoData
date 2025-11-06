@@ -1,0 +1,35 @@
+{
+    "name": "",
+	"compile": false,
+	"output": "csv",
+	"tables": [
+		{
+			"name": "",
+			"rows": 100,
+			"columns": [
+				{
+					"name": "",
+					"func": ""
+				}
+			],
+			"childTables": [
+				{
+					"name": "",
+					"rows": 1,
+					"columns": [
+						{
+							"name": "",
+							"func": ""
+						}
+					],
+					"relations": [
+						{
+							"parent": "",
+							"child": ""
+						}
+					]
+				}
+			]
+		}
+	]
+}

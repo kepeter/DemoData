@@ -11,7 +11,15 @@
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/DemoData/bin/Debug/net9.0/DemoData.dll",
-            "args": ["execute", "--file", "cmd.json", "--compile", "--culture", "en"],
+            "args": [
+                "edit",
+                "--type",
+                "resource",
+                "--culture",
+                "en",
+                "--name",
+                "first"
+            ],
             "cwd": "${workspaceFolder}/DemoData/bin/Debug/net9.0",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "integratedTerminal",

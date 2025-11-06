@@ -26,6 +26,7 @@ internal partial class Program
     private static int Main(string[] args)
     {
         Directory.CreateDirectory(cultureRoot);
+        Directory.CreateDirectory(binRoot);
 
         PrintHeader();
 
@@ -58,13 +59,25 @@ internal partial class Program
             },
         };
 
+        Command editCommand = new Command("edit", "Launch the editor.")
+        {
+            Options =
+            {
+                { new Option<EditType>("--type") { Description = "The type of the file to edit.", Required = true } },
+                { new Option<string>("--culture") { Description = "The culture to use. Ignored if type is 'Command'.", Required = false } },
+                { new Option<string>("--name") { Description = "The resource/command file to edit. Ignored if type is 'Function' but required for other types.", Required = false } },
+            },
+        };
+
         listCommand.SetAction(List);
         compileCommand.SetAction(Compile);
         executeCommand.SetAction(Execute);
+        editCommand.SetAction(Edit);
 
         rootCommand.Subcommands.Add(listCommand);
         rootCommand.Subcommands.Add(compileCommand);
         rootCommand.Subcommands.Add(executeCommand);
+        rootCommand.Subcommands.Add(editCommand);
 
         ParseResult parseResult = rootCommand.Parse(args);
 
